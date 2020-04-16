@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+__app_dir=$(dirname $(perl -e "use Cwd 'abs_path'; print abs_path(@ARGV[0])" -- "$0"))
+
+# TODO: this is currently only valid for the local project
+APP_VERSION="$(git describe --always --first-parent HEAD 2>/dev/null || echo 0.0.0)"
+
+source "$__app_dir/.env"
+
+APP_NAME="${APP_NAME:-$(basename $0)}"
+APP_ENV="${APP_ENV:-dev}"
+MODULES_DIR="${MODULES_DIR:-submodules}"
+
+AUTOLOAD_RESOURCE="$__app_dir/resource/autoload"
+
+__app_src="$__app_dir/src"
+
+source "$__app_src/kernel" $@

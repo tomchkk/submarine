@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+##
+# Cats the command's usage documentation.
+##
+__app_command::usage() {
+    cat << EOF
+
+$APP_NAME ($APP_VERSION)
+
+Navigate the murky waters of git submodules...
+
+Usage:  $APP_NAME [option]
+        $APP_NAME <command> [args]
+
+Options:
+    -h, --help      Print usage information
+
+Commands:
+    install     Do some submodule installation shiz
+    remove      Remove some submodule shiz
+    require     Require some submodule shiz
+
+EOF
+}
+
+##
+# Handles incoming app commands.
+##
+__app_command::handle() {
+    local opt="$1"
+    local args=${@:2}
+
+    case "$opt" in
+        install)
+            # TODO: installs all submodules found in .gitmodules
+        ;;
+        remove)
+            source "$command/remove-command" "${args[@]}"
+        ;;
+        require)
+            source "$command/require-command" "${args[@]}"
+        ;;
+        *)
+            __app_command::usage
+            return 0
+        ;;
+    esac
+}
+
+__app_command::handle $@

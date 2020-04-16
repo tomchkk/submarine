@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# try to get base git directory of the project being navigated
+GIT_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
+
+if [[ -z "$GIT_DIR" ]]; then
+    echo "You are not in a git repository!"
+
+    return 1
+fi
+
+command="$__app_src/command"
+feature="$__app_src/feature"
+service="$__app_src/service"
+
+source "$command/app-command" $@
