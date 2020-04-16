@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+__autoload_service_modules_dir="$GIT_DIR/$MODULES_DIR"
+
+##
+# Refresh the submarine autoload file.
+##
+autoload_service::refresh() {
+    if [[ ! -d "$__autoload_service_modules_dir" ]]; then
+        echo "The directory for submodules does not exist!"
+
+        return 1
+    fi
+
+    cp -f "$AUTOLOAD_RESOURCE" "$__autoload_service_modules_dir/"
+}

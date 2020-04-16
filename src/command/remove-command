@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+# source "$feature/remove-feature"
+
+##
+# Cats the command's usage documentation.
+##
+__remove_command::usage() {
+    cat << EOF
+
+$APP_NAME ($APP_VERSION)
+
+Remove some submodule shiz
+
+Usage:  $APP_NAME remove [<options>] [--] <repo> [<dir>]
+
+Options:
+    -n, --dry-run   Performs a dry-run of the remove command
+    -h, --help      Print usage information
+
+EOF
+}
+
+##
+# Handles incoming remove commands.
+##
+__remove_command::handle() {
+    local dry=false
+    # local branch="master"
+    local args=()
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            # -b|--branch)
+            #     branch="$2" && shift
+            # ;;
+            -n|--dry-run)
+                dry=true
+            ;;
+            -h|-*|--help|--*)
+                __remove_command::usage && return 0
+            ;;
+            *)
+                args+=("$1")
+            ;;
+        esac
+
+        shift
+    done
+
+    if $dry; then
+        # remove_feature::remove_dry_run "$branch" ${args[@]}
+
+        return 0
+    fi
+
+    # remove_feature::remove "$branch" ${args[@]}
+}
+
+# handle empty args
+[[ -z "$@" ]] && set -- "--help"
+
+__remove_command::handle $@

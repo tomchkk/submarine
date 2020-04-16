@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+source "$feature/require-feature"
+source "$service/autoload-service"
+
+##
+# Cats the command's usage documentation.
+##
+__require_command::usage() {
+    cat << EOF
+
+$APP_NAME ($APP_VERSION)
+
+Require some submodule shiz
+
+Usage:  $APP_NAME require [<options>] [--] <repo> [<dir>]
+
+Options:
+    -b, --branch    The required branch (default: master)
+    -n, --dry-run   Performs a dry-run of the require command
+    -h, --help      Print usage information
+
+EOF
+}
+
+##
+# Handles incoming require commands.
+##
+__require_command::handle() {
+    local dry=false
+    local branch="master"
+    local args=()
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            -b|--branch)
+                branch="$2" && shift
+            ;;
+            -n|--dry-run)
+                dry=true
+            ;;
+            -h|-*|--help|--*)
+                __require_command::usage && return 0
+            ;;
+            *)
+                args+=("$1")
+            ;;
+        esac
+
+        shift
+    done
+
+    if $dry; then
+        require_feature::require_dry_run "$branch" ${args[@]}
+
+        return 0
+    fi
+
+    require_feature::require "$branch" ${args[@]}
+    autoload_service::refresh
+}
+
+# handle empty args
+[[ -z "$@" ]] && set -- "--help"
+
+__require_command::handle $@

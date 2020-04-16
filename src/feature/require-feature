@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+##
+# Performs a dry-run of a new git submodule require action.
+##
+require_feature::require_dry_run() {
+    cat << EOF
+Options for submodule add command:
+    $(__require_feature::prepare_options $@)
+EOF
+}
+
+##
+# Requires a new git repo as a submodule.
+##
+require_feature::require() {
+    local options=$(__require_feature::prepare_options $@)
+
+    __require_feature::submodule_add "${options[@]}"
+}
+
+##
+# Prepares submodule add options
+##
+__require_feature::prepare_options() {
+    local branch=${1:?"A default branch is required"}
+    local repo=${2:?"A repository is required"}
+    local name=${3:-$(echo $repo | sed -E 's/.+:(.+).git/\1/')}
+
+    local options=(
+        -b $branch
+        # name of submodule - e.g.: git-user/project-name
+        --name $name
+        --
+        $repo
+        # path to install submodule in project
+        $MODULES_DIR/$name
+    )
+
+    echo ${options[@]}
+}
+
+##
+# Makes the actual git submodule add command.
+##
+__require_feature::submodule_add() {
+    cd "$GIT_DIR" && git submodule add $@
+}
