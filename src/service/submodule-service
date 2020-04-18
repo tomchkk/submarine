@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+##
+# Gets all registered submodule paths.
+##
+submodule_service::get_all_paths() {
+    echo $(git submodule foreach --quiet 'echo $sm_path')
+}
+
+##
+# Gets a submodule path from either a given submodule name or path.
+##
+submodule_service::get_path_from_given() {
+    local given="$1"
+    local path=$(git config --file .gitmodules --get submodule.$given.path)
+
+    if [[ -n "$path" ]]; then
+        echo "$path"
+
+        return 0
+    fi
+
+    for path in $(submodule_service::get_all_paths); do
+        if [[ $path =~ ^$given$ ]]; then
+            echo "$path"
+
+            return 0
+        fi
+    done
+
+    return 1
+}

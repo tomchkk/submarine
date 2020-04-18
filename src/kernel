@@ -9,6 +9,9 @@ if [[ -z "$GIT_DIR" ]]; then
     return 1
 fi
 
+# cd to the top-level git dir in the main process
+cd "$GIT_DIR"
+
 command="$__app_src/command"
 feature="$__app_src/feature"
 service="$__app_src/service"

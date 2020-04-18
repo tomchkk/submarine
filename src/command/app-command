@@ -18,7 +18,7 @@ Options:
 
 Commands:
     install     Do some submodule installation shiz
-    remove      Remove some submodule shiz
+    remove      Remove submodules from a project.
     require     Require some submodule shiz
 
 EOF
