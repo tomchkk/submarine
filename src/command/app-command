@@ -17,9 +17,10 @@ Options:
     -h, --help      Print usage information
 
 Commands:
-    install     Do some submodule installation shiz
-    remove      Remove submodules from a project.
-    require     Require some submodule shiz
+    install     Installs (or re-installs) submodules based on the entries found
+                in an existing project .gitmodules file
+    remove      Remove submodules from a project
+    require     Add required submodules to a project
 
 EOF
 }
@@ -33,8 +34,7 @@ __app_command::handle() {
 
     case "$opt" in
         install)
-            # TODO: installs all submodules found in .gitmodules
-            # TODO: reinstall after removal and git restore
+            source "$command/install-command" "${args[@]}"
         ;;
         remove)
             source "$command/remove-command" "${args[@]}"

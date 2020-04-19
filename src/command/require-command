@@ -9,9 +9,9 @@ source "$service/autoload-service"
 __require_command::usage() {
     cat << EOF
 
-$APP_NAME ($APP_VERSION)
+$APP_NAME ($APP_VERSION) - Require
 
-Require some submodule shiz
+Add required submodules to a project
 
 Usage:  $APP_NAME require [<options>] [--] <repo> [<name>]
 

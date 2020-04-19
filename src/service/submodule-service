@@ -1,9 +1,46 @@
 #!/usr/bin/env bash
 
 ##
-# Gets all registered submodule paths.
+# Installs the submodule for a path.
 ##
-submodule_service::get_all_paths() {
+submodule_service::install_path() {
+    local path=${1:?"A submodule path to install is required"}
+
+    git submodule init $path
+    git submodule update $path
+}
+
+##
+# Gets all configured submodule names.
+##
+submodule_service::get_configured_names() {
+    local names=()
+
+    for name in $(git config --file .gitmodules --name-only --get-regexp .path)
+    do
+        names+=($(echo $name | cut -d '.' -f 2))
+    done
+
+    echo ${names[@]}
+}
+
+##
+# Gets all configured submodule paths.
+##
+submodule_service::get_configured_paths() {
+    local paths=()
+
+    for key in $(__submodule_service::get_keys_for_item "path"); do
+        paths+=($(git config --file .gitmodules --get "$key"))
+    done
+
+    echo ${paths[@]}
+}
+
+##
+# Gets all installed submodule paths.
+##
+submodule_service::get_installed_paths() {
     echo $(git submodule foreach --quiet 'echo $sm_path')
 }
 
@@ -63,7 +100,7 @@ submodule_service::get_path_for_value() {
         return 0
     fi
 
-    for path in $(submodule_service::get_all_paths); do
+    for path in $(submodule_service::get_configured_paths); do
         if [[ $path =~ ^$value$ ]]; then
             echo "$path"
 
@@ -72,6 +109,15 @@ submodule_service::get_path_for_value() {
     done
 
     return 1
+}
+
+##
+# Gets the submodule config keys for a given config item.
+##
+__submodule_service::get_keys_for_item() {
+    local item=${1:?"An item key is required"}
+
+    echo $(git config --file .gitmodules --name-only --get-regexp .$item)
 }
 
 ##

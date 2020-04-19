@@ -8,7 +8,7 @@ source "$feature/remove-feature"
 __remove_command::usage() {
     cat << EOF
 
-$APP_NAME ($APP_VERSION)
+$APP_NAME ($APP_VERSION) - Remove
 
 Remove submodules from a project.
 

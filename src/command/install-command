@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+source "$feature/install-feature"
+
+##
+# Cats the command's usage documentation.
+##
+__install_command::usage() {
+    cat << EOF
+$APP_NAME ($APP_VERSION) - Install
+
+Installs, or re-installs, submodules based on the entries found in an existing
+project .gitmodules file
+
+Usage:  $APP_NAME install [<options>] -- [<name>...]
+
+Options:
+    -h, --help      Print usage information
+
+EOF
+}
+
+##
+# Handles incoming require commands.
+##
+__install_command::handle() {
+    local args=()
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            -h|-*|--help|--*)
+                __install_command::usage && return 0
+            ;;
+            *)
+                args+=("$1")
+            ;;
+        esac
+
+        shift
+    done
+
+    install_feature::install ${args[@]}
+}
+
+__install_command::handle $@

@@ -6,7 +6,7 @@ source "$service/submodule-service"
 # Removes all registered submodules.
 ##
 remove_feature::remove_all() {
-    for path in $(submodule_service::get_all_paths); do
+    for path in $(submodule_service::get_paths); do
         __remove_feature::remove $path
     done
 }
@@ -21,10 +21,10 @@ remove_feature::remove_named() {
         local path=$(submodule_service::get_path_for_value "$value")
 
         if [[ -z $path ]] ; then
-            echo "The submodule '$value' does not exist!"
+            echo "The submodule '$value' is not installed!"
 
-            echo "Available submodule paths:"
-            for path in $(submodule_service::get_all_paths); do
+            echo "Installed submodule paths:"
+            for path in $(submodule_service::get_installed_paths); do
                 echo " - $path"
             done
 
