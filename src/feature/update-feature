@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+# TODO:
+# - try using: `submodule update --remote`
+# - be aware of: `--merge` and `--no-fetch` options

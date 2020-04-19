@@ -21,6 +21,9 @@ Commands:
                 in an existing project .gitmodules file
     remove      Remove submodules from a project
     require     Add required submodules to a project
+    uninstall   Uninstall a project's installed submodules
+    update      Update a project's installed submodules to the latest version of
+                the required branch
 
 EOF
 }
@@ -41,6 +44,12 @@ __app_command::handle() {
         ;;
         require)
             source "$command/require-command" "${args[@]}"
+        ;;
+        uninstall)
+            source "$command/uninstall-command" "${args[@]}"
+        ;;
+        update)
+            source "$command/update-command" "${args[@]}"
         ;;
         *)
             __app_command::usage
