@@ -21,7 +21,7 @@ EOF
 }
 
 ##
-# Handles incoming require commands.
+# Handles incoming command requests.
 ##
 __install_command::handle() {
     local args=()

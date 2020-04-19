@@ -24,7 +24,7 @@ EOF
 }
 
 ##
-# Handles incoming require commands.
+# Handles incoming command requests.
 ##
 __require_command::handle() {
     local dry=false

@@ -1,1 +1,44 @@
 #!/usr/bin/env bash
+
+source "$feature/uninstall-feature"
+
+##
+# Cats the command's usage documentation.
+##
+__uninstall_command::usage() {
+    cat << EOF
+$APP_NAME ($APP_VERSION) - uninstall
+
+Uninstall a project's installed submodules.
+
+Usage:  $APP_NAME uninstall [<options>] -- [<name>...]
+
+Options:
+    -h, --help      Print usage information
+
+EOF
+}
+
+##
+# Handles incoming command requests.
+##
+__uninstall_command::handle() {
+    local args=()
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            -h|-*|--help|--*)
+                __uninstall_command::usage && return 0
+            ;;
+            *)
+                args+=("$1")
+            ;;
+        esac
+
+        shift
+    done
+
+    uninstall_feature::uninstall ${args[@]}
+}
+
+__uninstall_command::handle $@

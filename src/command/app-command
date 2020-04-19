@@ -29,7 +29,7 @@ EOF
 }
 
 ##
-# Handles incoming app commands.
+# Handles incoming command requests.
 ##
 __app_command::handle() {
     local opt="$1"

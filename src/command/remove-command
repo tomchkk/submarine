@@ -22,7 +22,7 @@ EOF
 }
 
 ##
-# Handles incoming remove commands.
+# Handles incoming command requests.
 ##
 __remove_command::handle() {
     local names=()
