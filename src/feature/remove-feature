@@ -17,13 +17,13 @@ remove_feature::remove_all() {
 remove_feature::remove_named() {
     local for_removal=$@
 
-    local given
-    for given in ${for_removal[@]}; do
-        local path=$(submodule_service::get_path_from_given "$given")
+    for value in ${for_removal[@]}; do
+        local path=$(submodule_service::get_path_for_value "$value")
 
         if [[ -z $path ]] ; then
-            echo "The submodule '$given' does not exist. Available:"
+            echo "The submodule '$value' does not exist!"
 
+            echo "Available submodule paths:"
             for path in $(submodule_service::get_all_paths); do
                 echo " - $path"
             done
@@ -39,43 +39,11 @@ remove_feature::remove_named() {
 # Removes the given submodule path.
 ##
 __remove_feature::remove() {
-    local path=$1
+    local path=${1:?"A submodule path to remove is required"}
 
-    echo "remove submodule: $path"
+    echo "Removing submodule: '$path'"
 
-    # remove code from submodule directory, ignoring any local modifications
-    # git submodule deinit --force -- $path
-
-    # remove vestigial directories
-    # rm -rf submodules/mymodule (if empty, replicate in .git/modules/)
-    # local vendor=$(echo $path | sed -E "s|^$MODULES_DIR/(.+)/*|\1|")
-
-    local vendor="$(echo $path | cut -d '/' -f 2)"
-    local candidates=()
-
-    for item in $(find "$GIT_DIR/$MODULES_DIR" -type d); do
-        local candidate=$(echo $item | sed -E "s|^$GIT_DIR/$MODULES_DIR/||")
-
-        if [[ $candidate =~ ^$vendor ]]; then
-            candidates+=("$candidate")
-        fi
-    done
-
-    local oldIFS=$IFS
-    IFS=$'\n' candidates=($(sort -r <<< "${candidates[*]}"))
-    IFS=$oldIFS && unset oldIFS
-
-    echo "Removing empty submodule vendor directories:"
-    for candidate in ${candidates[@]}; do
-        if [ -z "$(ls -A $GIT_DIR/$MODULES_DIR/$candidate)" ]; then
-            echo " - removing empty $candidate"
-
-            rm -d $GIT_DIR/$MODULES_DIR/$candidate
-        else
-            echo " - skipping non-empty $candidate"
-        fi
-    done
-
-    # remove submodule config
-    # git rm -f mymodule --- removes config
+    submodule_service::force_remove_repo $path
+    submodule_service::remove_path_directories $path
+    submodule_service::force_remove_index $path
 }

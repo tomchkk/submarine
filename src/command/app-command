@@ -34,6 +34,7 @@ __app_command::handle() {
     case "$opt" in
         install)
             # TODO: installs all submodules found in .gitmodules
+            # TODO: reinstall after removal and git restore
         ;;
         remove)
             source "$command/remove-command" "${args[@]}"

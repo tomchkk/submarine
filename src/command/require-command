@@ -13,7 +13,7 @@ $APP_NAME ($APP_VERSION)
 
 Require some submodule shiz
 
-Usage:  $APP_NAME require [<options>] [--] <repo> [<dir>]
+Usage:  $APP_NAME require [<options>] [--] <repo> [<name>]
 
 Options:
     -b, --branch    The required branch (default: master)
@@ -28,6 +28,8 @@ EOF
 ##
 __require_command::handle() {
     local dry=false
+    # TODO:
+    local force=false
     local branch="master"
     local args=()
 

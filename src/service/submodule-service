@@ -8,11 +8,54 @@ submodule_service::get_all_paths() {
 }
 
 ##
-# Gets a submodule path from either a given submodule name or path.
+# Removes the submodule repo code from the given submodule path, ignoring any
+# local submodule changes.
 ##
-submodule_service::get_path_from_given() {
-    local given="$1"
-    local path=$(git config --file .gitmodules --get submodule.$given.path)
+submodule_service::force_remove_repo() {
+    local path=${1:?"A submodule path to remove is required"}
+
+    git submodule deinit --force -- $path
+}
+
+##
+# Removes vestigial submodule path directories
+##
+submodule_service::remove_path_directories() {
+    local path=${1:?"A submodule path to remove is required"}
+
+    for candidate in $(__submodule_service::get_dir_sequence "$path"); do
+        local dir="$GIT_DIR/$MODULES_DIR/$candidate"
+
+        if [[ -n "$(ls -A $dir 2>/dev/null)" ]]; then
+            echo " - skipping non-empty '$candidate'"
+
+            continue
+        fi
+
+        echo " - removing empty '$candidate'"
+
+        # remove empty submodule directory
+        rm -d "$dir"
+        # remove corresponding git module directory
+        rm -rf "$GIT_DIR/.git/modules/$candidate"
+    done
+}
+
+##
+# Removes the submodule from the index.
+##
+submodule_service::force_remove_index() {
+    local path=${1:?"A submodule path to remove is required"}
+
+    git rm --force "$path"
+}
+
+##
+# Finds a submodule path from a submodule name or path value.
+##
+submodule_service::get_path_for_value() {
+    local value="$1"
+    local path=$(git config --file .gitmodules --get submodule.$value.path)
 
     if [[ -n "$path" ]]; then
         echo "$path"
@@ -21,7 +64,7 @@ submodule_service::get_path_from_given() {
     fi
 
     for path in $(submodule_service::get_all_paths); do
-        if [[ $path =~ ^$given$ ]]; then
+        if [[ $path =~ ^$value$ ]]; then
             echo "$path"
 
             return 0
@@ -29,4 +72,32 @@ submodule_service::get_path_from_given() {
     done
 
     return 1
+}
+
+##
+# Gets an array of directories, sequentially from the deepest to the nearest to
+# the base submodules directory for a submodule path - i.e.:
+# - vendor/directory/project-name
+# - vendor/directory
+# - vendor
+##
+__submodule_service::get_dir_sequence() {
+    local path=${1:?"A submodule path to remove is required"}
+    local project=$(echo $path | sed -E "s|^$MODULES_DIR/||")
+    local submodules_dir="$GIT_DIR/$MODULES_DIR"
+    local sequence=()
+
+    for candidate in $(find "$submodules_dir" -type d); do
+        candidate=$(echo $candidate | sed -E "s|^$submodules_dir/||")
+
+        if [[ "$project/" =~ ^"$candidate/" ]]; then
+            sequence+=("$candidate")
+        fi
+    done
+
+    local oldIFS=$IFS && IFS=$'\n'
+    local reversed=($(sort -r <<< "${sequence[*]}"))
+    IFS=$oldIFS
+
+    echo ${reversed[@]}
 }

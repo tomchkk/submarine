@@ -4,9 +4,11 @@
 # Performs a dry-run of a new git submodule require action.
 ##
 require_feature::require_dry_run() {
+    local options=$(__require_feature::prepare_options $@)
+
     cat << EOF
 Options for submodule add command:
-    $(__require_feature::prepare_options $@)
+    ${options[@]}
 EOF
 }
 
@@ -20,12 +22,19 @@ require_feature::require() {
 }
 
 ##
-# Prepares submodule add options
+# Makes the actual git submodule add command.
+##
+__require_feature::submodule_add() {
+    cd "$GIT_DIR" && git submodule add $@
+}
+
+##
+# Prepares submodule add options.
 ##
 __require_feature::prepare_options() {
     local branch=${1:?"A default branch is required"}
     local repo=${2:?"A repository is required"}
-    local name=${3:-$(echo $repo | sed -E 's/.+:(.+).git/\1/')}
+    local name=${3:-"$(__require_feature::parse_name_from_repo $repo)"}
 
     local options=(
         -b $branch
@@ -41,8 +50,14 @@ __require_feature::prepare_options() {
 }
 
 ##
-# Makes the actual git submodule add command.
+# Parses a submodule name from the git ssh repo address - i.e.:
+# - git@gitlab.com:vendor/project.git -> vendor/project
 ##
-__require_feature::submodule_add() {
-    cd "$GIT_DIR" && git submodule add $@
+__require_feature::parse_name_from_repo() {
+    local name=${1:?"A repo value is required"}
+
+    name=$(echo $name | cut -d ':' -f 2)
+    name=${name/.git/}
+
+    echo $name
 }
