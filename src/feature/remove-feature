@@ -6,7 +6,7 @@ source "$service/submodule-service"
 # Removes all registered submodules.
 ##
 remove_feature::remove_all() {
-    for path in $(submodule_service::get_paths); do
+    for path in $(submodule_service::get_installed_paths); do
         __remove_feature::remove $path
     done
 }
