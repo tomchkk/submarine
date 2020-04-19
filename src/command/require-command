@@ -11,7 +11,7 @@ __require_command::usage() {
 
 $APP_NAME ($APP_VERSION) - Require
 
-Add required submodules to a project
+Add required submodules to a project.
 
 Usage:  $APP_NAME require [<options>] [--] <repo> [<name>]
 

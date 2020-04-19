@@ -10,7 +10,7 @@ __install_command::usage() {
 $APP_NAME ($APP_VERSION) - Install
 
 Installs, or re-installs, submodules based on the entries found in an existing
-project .gitmodules file
+project .gitmodules file.
 
 Usage:  $APP_NAME install [<options>] -- [<name>...]
 
