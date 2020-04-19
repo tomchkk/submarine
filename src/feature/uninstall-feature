@@ -1,1 +1,33 @@
 #!/usr/bin/env bash
+
+source "$service/submodule-service"
+
+##
+# Uninstalls installed submodules.
+##
+uninstall_feature::uninstall() {
+    local for_uninstall=$@
+
+    if [[ -z "$for_uninstall" ]]; then
+        for_uninstall=$(submodule_service::get_installed_paths)
+    fi
+
+    for value in ${for_uninstall[@]}; do
+        local path=$(submodule_service::get_path_for_value "$value")
+
+        if [[ -z $path ]] ; then
+            echo "The submodule '$value' is not installed!"
+
+            echo "Installed submodule paths:"
+            for path in $(submodule_service::get_installed_paths); do
+                echo " - $path"
+            done
+
+            return 1
+        fi
+
+        echo "Uninstalling $path..."
+
+        submodule_service::force_remove_repo $path
+    done
+}
