@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 source "$feature/require-feature"
-source "$service/autoload-service"
 
 ##
 # Cats the command's usage documentation.
@@ -57,7 +56,6 @@ __require_command::handle() {
     fi
 
     require_feature::require "$branch" ${args[@]}
-    autoload_service::refresh
 }
 
 # handle empty args

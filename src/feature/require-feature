@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source "$service/autoload-service"
 source "$service/submodule-service"
 
 ##
@@ -21,6 +22,8 @@ require_feature::require() {
     local options=$(__require_feature::prepare_options $@)
 
     submodule_service::add "${options[@]}"
+
+    autoload_service::refresh
 }
 
 ##

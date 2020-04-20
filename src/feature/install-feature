@@ -3,20 +3,20 @@
 source "$service/submodule-service"
 
 ##
-# Installs required submodules.
+# Installs the given submodules paths or names.
 ##
 install_feature::install() {
-    local for_install=$@
+    local submodules=$@
 
-    if [[ -z "$for_install" ]]; then
-        for_install=$(submodule_service::get_configured_paths)
+    if [[ -z "$submodules" ]]; then
+        submodules=$(submodule_service::get_configured_paths)
     fi
 
-    for value in ${for_install[@]}; do
-        local path=$(submodule_service::get_path_for_value "$value")
+    for submodule in ${submodules[@]}; do
+        local path=$(submodule_service::get_path_for_value "$submodule")
 
         if [[ -z $path ]] ; then
-            echo "The submodule '$value' does not exist!"
+            echo "The submodule '$submodule' does not exist!"
 
             echo "Configured submodule paths:"
             for path in $(submodule_service::get_configured_paths); do

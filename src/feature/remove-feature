@@ -16,13 +16,13 @@ remove_feature::remove_all() {
 # Removes the given submodules paths or names.
 ##
 remove_feature::remove_named() {
-    local for_removal=$@
+    local submodules=$@
 
-    for value in ${for_removal[@]}; do
-        local path=$(submodule_service::get_path_for_value "$value")
+    for submodule in ${submodules[@]}; do
+        local path=$(submodule_service::get_path_for_value "$submodule")
 
         if [[ -z $path ]] ; then
-            echo "The submodule '$value' is not installed!"
+            echo "The submodule '$submodule' is not installed!"
 
             echo "Configured submodule paths:"
             for path in $(submodule_service::get_configured_paths); do

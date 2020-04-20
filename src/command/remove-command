@@ -12,7 +12,7 @@ $APP_NAME ($APP_VERSION) - Remove
 
 Remove submodules from a project.
 
-Usage:  $APP_NAME remove [<options>] | [<name>...]
+Usage:  $APP_NAME remove [<options>] | [<name|path>...]
 
 Options:
     -a, --all       Remove all submodules
@@ -25,7 +25,7 @@ EOF
 # Handles incoming command requests.
 ##
 __remove_command::handle() {
-    local names=()
+    local submodules=()
 
     while [[ "$#" -gt 0 ]]; do
         case $1 in
@@ -36,14 +36,14 @@ __remove_command::handle() {
                 __remove_command::usage && return 0
             ;;
             *)
-                names+=("$1")
+                submodules+=("$1")
             ;;
         esac
 
         shift
     done
 
-    remove_feature::remove_named ${names[@]}
+    remove_feature::remove_named ${submodules[@]}
 }
 
 # handle empty args

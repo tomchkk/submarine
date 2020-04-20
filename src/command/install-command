@@ -11,7 +11,7 @@ $APP_NAME ($APP_VERSION) - Install
 
 Installs a project's configured submodules.
 
-Usage:  $APP_NAME install [<options>] -- [<name>...]
+Usage:  $APP_NAME install [<options>] -- [<name|path>...]
 
 Options:
     -h, --help      Print usage information
@@ -23,7 +23,7 @@ EOF
 # Handles incoming command requests.
 ##
 __install_command::handle() {
-    local args=()
+    local submodules=()
 
     while [[ "$#" -gt 0 ]]; do
         case $1 in
@@ -31,14 +31,14 @@ __install_command::handle() {
                 __install_command::usage && return 0
             ;;
             *)
-                args+=("$1")
+                submodules+=("$1")
             ;;
         esac
 
         shift
     done
 
-    install_feature::install ${args[@]}
+    install_feature::install ${submodules[@]}
 }
 
 __install_command::handle $@

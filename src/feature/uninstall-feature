@@ -6,17 +6,17 @@ source "$service/submodule-service"
 # Uninstalls installed submodules.
 ##
 uninstall_feature::uninstall() {
-    local for_uninstall=$@
+    local submodules=$@
 
-    if [[ -z "$for_uninstall" ]]; then
-        for_uninstall=$(submodule_service::get_installed_paths)
+    if [[ -z "$submodules" ]]; then
+        submodules=$(submodule_service::get_installed_paths)
     fi
 
-    for value in ${for_uninstall[@]}; do
-        local path=$(submodule_service::get_path_for_value "$value")
+    for submodule in ${submodules[@]}; do
+        local path=$(submodule_service::get_path_for_value "$submodule")
 
         if [[ -z $path ]] ; then
-            echo "The submodule '$value' is not installed!"
+            echo "The submodule '$submodule' is not installed!"
 
             echo "Installed submodule paths:"
             for path in $(submodule_service::get_installed_paths); do
