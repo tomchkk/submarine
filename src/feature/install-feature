@@ -26,7 +26,7 @@ install_feature::install() {
             return 1
         fi
 
-        echo "Installing $path..."
+        echo "Installing '$path'..."
 
         submodule_service::install_path $path
     done

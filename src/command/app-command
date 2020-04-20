@@ -17,8 +17,7 @@ Options:
     -h, --help      Print usage information
 
 Commands:
-    install     Installs (or re-installs) submodules based on the entries found
-                in an existing project .gitmodules file
+    install     Installs a project's configured submodules.
     remove      Remove submodules from a project
     require     Add required submodules to a project
     uninstall   Uninstall a project's installed submodules

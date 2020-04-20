@@ -9,8 +9,7 @@ __install_command::usage() {
     cat << EOF
 $APP_NAME ($APP_VERSION) - Install
 
-Installs, or re-installs, submodules based on the entries found in an existing
-project .gitmodules file.
+Installs a project's configured submodules.
 
 Usage:  $APP_NAME install [<options>] -- [<name>...]
 
