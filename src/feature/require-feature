@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source "$service/submodule-service"
+
 ##
 # Performs a dry-run of a new git submodule require action.
 ##
@@ -18,14 +20,7 @@ EOF
 require_feature::require() {
     local options=$(__require_feature::prepare_options $@)
 
-    __require_feature::submodule_add "${options[@]}"
-}
-
-##
-# Makes the actual git submodule add command.
-##
-__require_feature::submodule_add() {
-    cd "$GIT_DIR" && git submodule add $@
+    submodule_service::add "${options[@]}"
 }
 
 ##

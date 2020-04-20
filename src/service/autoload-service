@@ -14,3 +14,14 @@ autoload_service::refresh() {
 
     cp -f "$AUTOLOAD_RESOURCE" "$__autoload_service_modules_dir/"
 }
+
+##
+# Removes the submarine autoload file.
+##
+autoload_service::remove() {
+    local file=$(basename "$AUTOLOAD_RESOURCE")
+
+    if [[ -f "$__autoload_service_modules_dir/$file" ]]; then
+        rm -f "$__autoload_service_modules_dir/$file"
+    fi
+}

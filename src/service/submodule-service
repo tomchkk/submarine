@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
 ##
+# Adds a git submodule to a project.
+##
+submodule_service::add() {
+    git submodule add $@
+}
+
+##
 # Installs the submodule for a path.
 ##
 submodule_service::install_path() {
@@ -55,7 +62,7 @@ submodule_service::force_remove_repo() {
 }
 
 ##
-# Removes vestigial submodule path directories
+# Removes vestigial submodule path directories.
 ##
 submodule_service::remove_path_directories() {
     local path=${1:?"A submodule path to remove is required"}
@@ -109,6 +116,24 @@ submodule_service::get_path_for_value() {
     done
 
     return 1
+}
+
+##
+# Removes the configured submodule directory, .git/modules directory and the
+# .gitmodules file.
+##
+submodule_service::remove_config() {
+    if [[ -d "$GIT_DIR/$MODULES_DIR" ]]; then
+        rm -d "$GIT_DIR/$MODULES_DIR"
+    fi
+
+    if [[ -f "$GIT_DIR/.gitmodules" ]]; then
+        rm "$GIT_DIR/.gitmodules"
+    fi
+
+    if [[ -d "$GIT_DIR/.git/modules" ]]; then
+        rm -d "$GIT_DIR/.git/modules"
+    fi
 }
 
 ##

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source "$service/autoload-service"
 source "$service/submodule-service"
 
 ##
@@ -46,4 +47,10 @@ __remove_feature::remove() {
     submodule_service::force_remove_repo $path
     submodule_service::remove_path_directories $path
     submodule_service::force_remove_index $path
+
+    local remaining=($(submodule_service::get_configured_paths))
+    if [[ ${#remaining[@]} -eq 0 ]]; then
+        autoload_service::remove
+        submodule_service::remove_config
+    fi
 }
