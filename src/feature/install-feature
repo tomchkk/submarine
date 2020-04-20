@@ -3,14 +3,19 @@
 source "$service/submodule-service"
 
 ##
+# Installs all configured submodules.
+##
+install_feature::install_all() {
+    for path in $(submodule_service::get_configured_paths); do
+        __install_feature::install $path
+    done
+}
+
+##
 # Installs the given submodule paths or names.
 ##
-install_feature::install() {
+install_feature::install_named() {
     local submodules=$@
-
-    if [[ -z "$submodules" ]]; then
-        submodules=$(submodule_service::get_configured_paths)
-    fi
 
     for submodule in ${submodules[@]}; do
         local path=$(submodule_service::get_path_for_value "$submodule")
@@ -26,8 +31,17 @@ install_feature::install() {
             return 1
         fi
 
-        echo "Installing '$path'..."
-
-        submodule_service::install_path $path
+        __install_feature::install $path
     done
+}
+
+##
+# Installs the given submodule.
+##
+__install_feature::install() {
+    local path=${1:?"A submodule path is required"}
+
+    echo "Installing '$path'..."
+
+    submodule_service::install_path $path
 }

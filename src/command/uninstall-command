@@ -11,9 +11,10 @@ $APP_NAME ($APP_VERSION) - uninstall
 
 Uninstall a project's installed submodules.
 
-Usage:  $APP_NAME uninstall [<options>] -- [<name|path>...]
+Usage:  $APP_NAME uninstall [<options>] | [<name|path>...]
 
 Options:
+    -a, --all       Uninstall all submodules
     -h, --help      Print usage information
 
 EOF
@@ -27,6 +28,9 @@ __uninstall_command::handle() {
 
     while [[ "$#" -gt 0 ]]; do
         case $1 in
+            -a|--all)
+                uninstall_feature::uninstall_all && return 0
+            ;;
             -h|-*|--help|--*)
                 __uninstall_command::usage && return 0
             ;;
@@ -38,7 +42,10 @@ __uninstall_command::handle() {
         shift
     done
 
-    uninstall_feature::uninstall ${submodules[@]}
+    uninstall_feature::uninstall_named ${submodules[@]}
 }
+
+# handle empty args
+[[ -z "$@" ]] && set -- "--help"
 
 __uninstall_command::handle $@

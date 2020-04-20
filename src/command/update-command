@@ -21,6 +21,9 @@ Options:
 EOF
 }
 
+##
+# Handles incoming command requests.
+##
 __update_command::handle() {
     local submodules=()
 
@@ -42,5 +45,8 @@ __update_command::handle() {
 
     update_feature::update_named ${submodules[@]}
 }
+
+# handle empty args
+[[ -z "$@" ]] && set -- "--help"
 
 __update_command::handle $@

@@ -3,14 +3,19 @@
 source "$service/submodule-service"
 
 ##
-# Uninstalls installed submodules.
+# Uninstalls all installed submodules.
 ##
-uninstall_feature::uninstall() {
-    local submodules=$@
+uninstall_feature::uninstall_all() {
+    for path in $(submodule_service::get_installed_paths); do
+        __uninstall_feature::uninstall $path
+    done
+}
 
-    if [[ -z "$submodules" ]]; then
-        submodules=$(submodule_service::get_installed_paths)
-    fi
+##
+# Uninstalls installed submodule path or names.
+##
+uninstall_feature::uninstall_named() {
+    local submodules=$@
 
     for submodule in ${submodules[@]}; do
         local path=$(submodule_service::get_path_for_value "$submodule")
@@ -26,8 +31,17 @@ uninstall_feature::uninstall() {
             return 1
         fi
 
-        echo "Uninstalling $path..."
-
-        submodule_service::force_remove_repo $path
+        __uninstall_feature::uninstall $path
     done
+}
+
+##
+# Uninstalls the given submodule.
+##
+__uninstall_feature::uninstall() {
+    local path=${1:?"A submodule path is required"}
+
+    echo "Uninstalling $path..."
+
+    submodule_service::force_remove_repo $path
 }

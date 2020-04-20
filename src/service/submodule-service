@@ -11,10 +11,19 @@ submodule_service::add() {
 # Installs the submodule for a path.
 ##
 submodule_service::install_path() {
-    local path=${1:?"A submodule path to install is required"}
+    local path=${1:?"A submodule path is required"}
 
     git submodule init $path
     git submodule update $path
+}
+
+##
+# Updates the submodule for a path.
+##
+submodule_service::update_path() {
+    local path=${1:?"A submodule path is required"}
+
+    git submodule update --remote $path
 }
 
 ##
@@ -56,7 +65,7 @@ submodule_service::get_installed_paths() {
 # local submodule changes.
 ##
 submodule_service::force_remove_repo() {
-    local path=${1:?"A submodule path to remove is required"}
+    local path=${1:?"A submodule path is required"}
 
     git submodule deinit --force -- $path
 }
@@ -65,7 +74,7 @@ submodule_service::force_remove_repo() {
 # Removes vestigial submodule path directories.
 ##
 submodule_service::remove_path_directories() {
-    local path=${1:?"A submodule path to remove is required"}
+    local path=${1:?"A submodule path is required"}
 
     for candidate in $(__submodule_service::get_dir_sequence "$path"); do
         local dir="$GIT_DIR/$MODULES_DIR/$candidate"
@@ -89,7 +98,7 @@ submodule_service::remove_path_directories() {
 # Removes the submodule from the index.
 ##
 submodule_service::force_remove_index() {
-    local path=${1:?"A submodule path to remove is required"}
+    local path=${1:?"A submodule path is required"}
 
     git rm --force "$path"
 }
@@ -153,7 +162,7 @@ __submodule_service::get_keys_for_item() {
 # - vendor
 ##
 __submodule_service::get_dir_sequence() {
-    local path=${1:?"A submodule path to remove is required"}
+    local path=${1:?"A submodule path is required"}
     local project=$(echo $path | sed -E "s|^$MODULES_DIR/||")
     local submodules_dir="$GIT_DIR/$MODULES_DIR"
     local sequence=()

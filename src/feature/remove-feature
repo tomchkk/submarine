@@ -37,7 +37,7 @@ remove_feature::remove_named() {
 }
 
 ##
-# Removes the given submodule path.
+# Removes the given submodule.
 ##
 __remove_feature::remove() {
     local path=${1:?"A submodule path is required"}

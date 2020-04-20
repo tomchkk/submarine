@@ -1,5 +1,47 @@
 #!/usr/bin/env bash
 
-# TODO:
-# - try using: `submodule update --remote`
-# - be aware of: `--merge` and `--no-fetch` options
+source "$service/submodule-service"
+
+##
+# Updates all installed submodules.
+##
+update_feature::update_all() {
+    for path in $(submodule_service::get_installed_paths); do
+        __update_feature::update $path
+    done
+}
+
+##
+# Updates the given submodule paths or names.
+##
+update_feature::update_named() {
+    local submodules=$@
+
+    for submodule in ${submodules[@]}; do
+        local path=$(submodule_service::get_path_for_value "$submodule")
+
+        if [[ -z $path ]] ; then
+            echo "The submodule '$submodule' is not installed!"
+
+            echo "Installed submodule paths:"
+            for path in $(submodule_service::get_installed_paths); do
+                echo " - $path"
+            done
+
+            return 1
+        fi
+
+        __update_feature::update $path
+    done
+}
+
+##
+# Updates the given submodule.
+##
+__update_feature::update() {
+    local path=${1:?"A submodule path is required"}
+
+    echo "Updating $path..."
+
+    submodule_service::update_path $path
+}
