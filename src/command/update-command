@@ -1,1 +1,46 @@
 #!/usr/bin/env bash
+
+source "$feature/update-feature"
+
+##
+# Cats the command's usage documentation.
+##
+__update_command::usage() {
+    cat << EOF
+$APP_NAME ($APP_VERSION) - update
+
+Update a project's installed submodules to the latest version of the required
+branch.
+
+Usage:: $APP_NAME update [<options>] | [<name|path>...]
+
+Options:
+    -a, --all       Update all submodules
+    -h, --help      Print usage information
+
+EOF
+}
+
+__update_command::handle() {
+    local submodules=()
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            -a|--all)
+                update_feature::update_all && return 0
+            ;;
+            -h|-*|--help|--*)
+                __update_command::usage && return 0
+            ;;
+            *)
+                submodules+=("$1")
+            ;;
+        esac
+
+        shift
+    done
+
+    update_feature::update_named ${submodules[@]}
+}
+
+__update_command::handle $@

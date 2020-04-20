@@ -13,7 +13,7 @@ remove_feature::remove_all() {
 }
 
 ##
-# Removes the given submodules paths or names.
+# Removes the given submodule paths or names.
 ##
 remove_feature::remove_named() {
     local submodules=$@
@@ -40,7 +40,7 @@ remove_feature::remove_named() {
 # Removes the given submodule path.
 ##
 __remove_feature::remove() {
-    local path=${1:?"A submodule path to remove is required"}
+    local path=${1:?"A submodule path is required"}
 
     echo "Removing submodule: '$path'"
 

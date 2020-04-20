@@ -3,7 +3,7 @@
 source "$service/submodule-service"
 
 ##
-# Installs the given submodules paths or names.
+# Installs the given submodule paths or names.
 ##
 install_feature::install() {
     local submodules=$@
