@@ -91,7 +91,7 @@ __dependency_service::install_dependency() {
                 # the required submodule dependency is already installed in the
                 # main project
                 local installed_path=$(echo ${installed:1} | cut -d ' ' -f 2)
-                local installed_name=$(__submodule_service::get_name_for_path $installed_path)
+                local installed_name=$(submodule_service::get_name_for_path $installed_path)
                 local sm_name=$(__dependency_service::get_name_for_submodule_path $sm_path)
 
                 if [[ $sm_name == $installed_name ]]; then
@@ -119,5 +119,5 @@ __dependency_service::get_name_for_submodule_path() {
     local base=$(echo $path | sed -E "s|^($MODULES_DIR/.+)/$MODULES_DIR/.+$|\1|")
     local sm_path=$(echo $path | sed -E "s|^$MODULES_DIR/.+/($MODULES_DIR/.+)$|\1|")
 
-    echo $(__submodule_service::get_name_for_path "$sm_path" "$base")
+    echo $(submodule_service::get_name_for_path "$sm_path" "$base")
 }

@@ -128,6 +128,42 @@ submodule_service::get_path_for_value() {
 }
 
 ##
+# Gets a name for a given submodule path, with an optional submodule base path,
+# to allow querying of config of installed submodules.
+##
+submodule_service::get_name_for_path() {
+    local path=${1:?"A path is required"}
+    local base=${2:-"./"}
+
+    local config=$(git config --file $base/.gitmodules --get-regexp .path)
+
+    echo "${config[@]}" | grep $path | cut -d ' ' -f 1 | cut -d '.' -f 2
+}
+
+##
+# Gets a repo for a given submodule path, with an optional submodule base path,
+# to allow querying of config of installed submodules.
+##
+submodule_service::get_repo_for_path() {
+    local path=${1:?"A path is required"}
+    local base=${2:-"./"}
+
+    # echo $(git config --file $base/.gitmodules --get submodule.$name.url)
+    __submodule_service::get_config_item_for_path "url" $path
+}
+
+##
+# Gets a branch for a given submodule path, with an optional submodule base path,
+# to allow querying of config of installed submodules.
+##
+submodule_service::get_branch_for_path() {
+    local path=${1:?"A path is required"}
+    local base=${2:-"./"}
+
+    __submodule_service::get_config_item_for_path "branch" $path
+}
+
+##
 # Removes the configured submodule directory, .git/modules directory and the
 # .gitmodules file.
 ##
@@ -146,16 +182,16 @@ submodule_service::remove_config() {
 }
 
 ##
-# Gets a name for a given submodule path, with an optional submodule base path,
-# to allow querying of config of installed submodules.
+# Gets a specified submodule config item for a given path.
 ##
-__submodule_service::get_name_for_path() {
-    local path=${1:?"A path is required"}
-    local base=${2:-"./"}
+__submodule_service::get_config_item_for_path() {
+    local item=${1:?"An item is required"}
+    local path=${2:?"A path is required"}
+    local base=${3:-"./"}
 
-    local config=$(git config --file $base/.gitmodules --get-regexp .path)
+    local name=$(submodule_service::get_name_for_path $path)
 
-    echo "${config[@]}" | grep $path | cut -d ' ' -f 1 | cut -d '.' -f 2
+    echo $(git config --file $base/.gitmodules --get submodule.$name.$item)
 }
 
 ##

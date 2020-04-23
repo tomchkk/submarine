@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+source "$service/submodule-service"
+
+##
+# Lists all of a project's configured submodules.
+##
+list_feature::list_configured_submodules() {
+    local paths=$(submodule_service::get_configured_paths)
+
+    for path in ${paths[@]}; do
+        echo " $(submodule_service::get_name_for_path $path):"
+        echo " - path: $path"
+        echo " - repo: $(submodule_service::get_repo_for_path $path)"
+        echo " - branch: $(submodule_service::get_branch_for_path $path)"
+    done
+}
+
+##
+# Lists all of a project's installed submodules.
+##
+list_feature::list_installed_submodules() {
+    local paths=$(submodule_service::get_installed_paths)
+
+    for path in ${paths[@]}; do
+        echo " $(submodule_service::get_name_for_path $path) -> $path"
+    done
+}

@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+source "$feature/list-feature"
+
+##
+# Cats the command's usage documentation.
+##
+__list_command::usage() {
+    cat << EOF
+$APP_NAME ($APP_VERSION) - List
+
+List all of a project's configured or installed submodules.
+
+Usage:  $APP_NAME list [<options>]
+
+Options:
+    -c, --configured    List configured submodules
+    -i, --installed     List installed submodules
+    -h, --help          Print usage information
+
+EOF
+}
+
+##
+# Handles incoming command requests.
+##
+__list_command::handle() {
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            -c|--configured)
+                list_feature::list_configured_submodules && return 0
+            ;;
+            -i|--installed)
+                list_feature::list_installed_submodules && return 0
+            ;;
+            -h|-*|--help|--*)
+                __list_command::usage && return 0
+            ;;
+        esac
+
+        shift
+    done
+}
+
+# handle empty args
+[[ -z "$@" ]] && set -- "--help"
+
+__list_command::handle $@

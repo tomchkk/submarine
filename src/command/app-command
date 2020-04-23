@@ -17,11 +17,11 @@ Options:
     -h, --help      Print usage information
 
 Commands:
-    install     Installs a project's configured submodules.
-    list        TODO: list all of a project's configured submodules.
+    install     Installs a project's configured submodules
+    list        List all of a project's configured or installed submodules
     remove      Remove submodules from a project
     require     Add required submodules to a project
-    status      TODO: print the status of a project's configured submodules.
+    status      TODO: print the status of a project's configured submodules
     uninstall   Uninstall a project's installed submodules
     update      Update a project's installed submodules to the latest version of
                 the required branch
@@ -39,6 +39,9 @@ __app_command::handle() {
     case "$opt" in
         install)
             source "$command/install-command" "${args[@]}"
+        ;;
+        list)
+            source "$command/list-command" "${args[@]}"
         ;;
         remove)
             source "$command/remove-command" "${args[@]}"
