@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+source "$service/submodule-service"
+
+__dependency_service_path=${@:?"A path is required"}
+
+##
+# Gets an array of submodule dependencies and their state for a path.
+##
+dependency_service::install_dependencies() {
+    local path=$__dependency_service_path
+    local states=($(git submodule status --recursive $path))
+    local dependencies=()
+
+    # $states is a string, so we have to break it down into parts to then
+    # reassemble it again as a useable array
+    for item in "${states[@]}"; do
+        local sha sm_path
+
+        case "$item" in
+            **/**) sm_path=$item ;;
+            (*\)) : ;; # version noop
+            *)
+                if [[ -n $sha ]] && [[ "$sm_path" != "$path" ]]; then
+                    # exclude the parent path from the array
+
+                    # at this point we've looped through all values and we're
+                    # about to start again, so we'll push current values on to
+                    # the array and then unset everything
+                    dependencies+=("$sha $sm_path")
+                    unset sha sm_path
+                fi
+
+                case "$item" in
+                    [-+U]*) sha=$item ;;
+                    *) sha="~"$item ;;
+                esac
+            ;;
+        esac
+    done
+
+    if [[ "$sm_path" != "$path" ]]; then
+        # add the final dependency, but exclude the parent path from the array
+        dependencies+=("$sha $sm_path")
+    fi
+
+    for dependency in "${dependencies[@]}"; do
+        __dependency_service::install_dependency $dependency
+    done
+
+    unset __dependency_service_path
+}
+
+##
+# Installs the given submodule dependency if it's not already installed.
+#
+# https://git-scm.com/docs/git-submodule#Documentation/git-submodule.txt-status--cached--recursive--ltpathgt82308203
+##
+__dependency_service::install_dependency() {
+    local sm_state=${1:0:1}
+    local sm_sha=${1:1}
+    local sm_path=${@:2}
+
+    local local_sm_path=${sm_path/$__dependency_service_path\/}
+
+    if [[ $sm_state != "-" ]]; then
+        # submodule depencency is already installed (in whatever state)
+        echo "Submodule '$sm_path' for '$__dependency_service_path' is already installed."
+
+        return 0
+    fi
+
+    # check for the existence of the required submodule dependency in the main
+    # project
+    local installed="$(git submodule status $local_sm_path 2>/dev/null)"
+
+    case "$installed" in
+        -*)
+            echo "Dependency '$local_sm_path' is configured but not installed locally"
+        ;;
+        +*)
+            echo "Dependency '$local_sm_path' is installed locally but with changes"
+        ;;
+        U*)
+            echo "Dependency '$local_sm_path' is installed locally but with merge conflicts"
+        ;;
+        *)
+            local installed_sha=$(echo ${installed:1} | cut -d ' ' -f 1)
+
+            if [[ -n "$installed" ]] && [[ $installed_sha == $sm_sha ]]; then
+                # the required submodule dependency is already installed in the
+                # main project
+                local installed_path=$(echo ${installed:1} | cut -d ' ' -f 2)
+                local installed_name=$(__submodule_service::get_name_for_path $installed_path)
+                local sm_name=$(__dependency_service::get_name_for_submodule_path $sm_path)
+
+                if [[ $sm_name == $installed_name ]]; then
+                    echo "Dependency '$sm_path' is already installed locally as '$installed_name'"
+
+                    return 0
+                fi
+
+                echo "Dependency '$sm_path' is already installed at '$installed_path' but with a different name ('$sm_name')"
+            else
+                echo "Dependency '$local_sm_path' is not configured or installed locally"
+            fi
+        ;;
+    esac
+
+    echo "'$sm_path' needs to be installed in its submodule"
+}
+
+##
+# Gets the name of a submodule dependency for a given submodule dependency path.
+##
+__dependency_service::get_name_for_submodule_path() {
+    local path=${1:?"A path is required"}
+
+    local base=$(echo $path | sed -E "s|^($MODULES_DIR/.+)/$MODULES_DIR/.+$|\1|")
+    local sm_path=$(echo $path | sed -E "s|^$MODULES_DIR/.+/($MODULES_DIR/.+)$|\1|")
+
+    echo $(__submodule_service::get_name_for_path "$sm_path" "$base")
+}

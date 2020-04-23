@@ -2,7 +2,7 @@
 
 __app_dir=$(dirname $(perl -e "use Cwd 'abs_path'; print abs_path(@ARGV[0])" -- "$0"))
 
-APP_VERSION="$(cat $__app_dir/version)"
+APP_VERSION="$(cd $__app_dir; git describe --always --first-parent HEAD 2>/dev/null)"
 
 source "$__app_dir/.env"
 

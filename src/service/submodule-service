@@ -23,7 +23,7 @@ submodule_service::install_path() {
 submodule_service::update_path() {
     local path=${1:?"A submodule path is required"}
 
-    git submodule update --remote $path
+    git submodule update --force --checkout --remote $path
 }
 
 ##
@@ -31,9 +31,9 @@ submodule_service::update_path() {
 ##
 submodule_service::get_configured_names() {
     local names=()
+    local options=(--file .gitmodules --name-only --get-regexp .path)
 
-    for name in $(git config --file .gitmodules --name-only --get-regexp .path)
-    do
+    for name in $(git config ${options[@]}); do
         names+=($(echo $name | cut -d '.' -f 2))
     done
 
@@ -143,6 +143,19 @@ submodule_service::remove_config() {
     if [[ -d "$GIT_DIR/.git/modules" ]]; then
         rm -d "$GIT_DIR/.git/modules"
     fi
+}
+
+##
+# Gets a name for a given submodule path, with an optional submodule base path,
+# to allow querying of config of installed submodules.
+##
+__submodule_service::get_name_for_path() {
+    local path=${1:?"A path is required"}
+    local base=${2:-"./"}
+
+    local config=$(git config --file $base/.gitmodules --get-regexp .path)
+
+    echo "${config[@]}" | grep $path | cut -d ' ' -f 1 | cut -d '.' -f 2
 }
 
 ##

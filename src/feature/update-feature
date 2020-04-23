@@ -6,9 +6,13 @@ source "$service/submodule-service"
 # Updates all installed submodules.
 ##
 update_feature::update_all() {
-    for path in $(submodule_service::get_installed_paths); do
+    local paths=$(submodule_service::get_installed_paths)
+
+    for path in ${paths[@]}; do
         __update_feature::update $path
     done
+
+    __update_feature::install_dependencies ${paths[@]}
 }
 
 ##
@@ -16,6 +20,7 @@ update_feature::update_all() {
 ##
 update_feature::update_named() {
     local submodules=$@
+    local paths=()
 
     for submodule in ${submodules[@]}; do
         local path=$(submodule_service::get_path_for_value "$submodule")
@@ -32,7 +37,11 @@ update_feature::update_named() {
         fi
 
         __update_feature::update $path
+
+        paths+=("$path")
     done
+
+    __update_feature::install_dependencies ${paths[@]}
 }
 
 ##
@@ -44,4 +53,18 @@ __update_feature::update() {
     echo "Updating $path..."
 
     submodule_service::update_path $path
+}
+
+##
+# Installs submodule dependencies for a given array of paths.
+##
+__update_feature::install_dependencies() {
+    local paths=$@
+
+    for path in ${paths[@]}; do
+        echo "Installing dependencies for '$path'"
+
+        source "$service/dependency-service" $path
+        dependency_service::install_dependencies
+    done
 }

@@ -22,9 +22,22 @@ require_feature::require() {
     local options=$(__require_feature::prepare_options $@)
 
     submodule_service::add "${options[@]}"
-
     autoload_service::refresh
+    __require_feature::install_dependencies ${options[@]}
 }
+
+##
+# Installs submodule dependencies for a required path
+##
+__require_feature::install_dependencies() {
+    local path=$(for option in "$@"; do :; done; echo $option)
+
+    echo "Installing dependencies for '$path'"
+
+    source "$service/dependency-service" $path
+    dependency_service::install_dependencies
+}
+
 
 ##
 # Prepares submodule add options.
@@ -36,6 +49,7 @@ __require_feature::prepare_options() {
 
     local options=(
         -b $branch
+        #--force # TODO: add this as an option for when items aren't removed properly
         # name of submodule - e.g.: git-user/project-name
         --name $name
         --
