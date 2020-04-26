@@ -1,32 +1,43 @@
 #!/usr/bin/env bash
 
 __autoload_service_submodules_path="$GIT_PATH/$SUBMODULES_DIR"
-__autoload_service_autoload_resource="$AUTOLOAD_RESOURCE"
+__autoload_service_resource_file="$AUTOLOAD_RESOURCE"
+__autoload_service_project_file="$SUBMODULES_DIR/$(basename "$AUTOLOAD_RESOURCE")"
 
 ##
 # Refresh the submarine autoload file.
 ##
 autoload_service::refresh() {
-    if [[ ! -d "$__autoload_service_submodules_path" ]]; then
+    local submodules_path="$__autoload_service_submodules_path"
+    local resource_file="$__autoload_service_resource_file"
+    local project_file="$__autoload_service_project_file"
+
+    if [[ ! -d "$submodules_path" ]]; then
         echo "The directory for submodules does not exist!"
 
         return 1
     fi
 
-    cp -f "$__autoload_service_autoload_resource" "$__autoload_service_submodules_path/"
+    cp -f "$resource_file" "$submodules_path/"
 
-    # TODO: add to project's .gitignore, if it's not already there
+    # add autoload path to project's .gitignore
+    if [[ ! -e .gitignore ]]; then
+        echo "$project_file" > .gitignore
+    elif $(grep -q "^${project_file}$" .gitignore); then
+        echo "$project_file" >> .gitignore
+    fi
 }
 
 ##
 # Removes the submarine autoload file.
 ##
 autoload_service::remove() {
-    local file=$(basename "$__autoload_service_autoload_resource")
+    local project_file="$__autoload_service_project_file"
 
-    if [[ -f "$__autoload_service_submodules_path/$file" ]]; then
-        rm -f "$__autoload_service_submodules_path/$file"
+    if [[ -f "$project_file" ]]; then
+        rm -f "$project_file"
     fi
 
-    # TODO: remove from project's .gitignore, if it's there
+    # removes autoload file from project's .gitignore, if it's there
+    echo "$(grep -v "^${project_file}$" .gitignore)" > .gitignore
 }
