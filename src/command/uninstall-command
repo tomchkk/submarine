@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source "$feature/uninstall-feature"
+source "$FEATURE/uninstall-feature"
 
 ##
 # Cats the command's usage documentation.

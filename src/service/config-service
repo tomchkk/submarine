@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+##
+# Adds a config key value to git submodule config, if it doesn't already exist.
+##
+config_service::add_key() {
+    local section="${1:?"A config section is required"}"
+    local key="${2?:"A config key is required"}"
+    local value="${3:?"A config value is required"}"
+
+    local full_key="submodule.$section.$key"
+    local existing=$(git config --file .gitmodules --get-all "$full_key")
+
+    if [[ "$existing" != *"$value"* ]]; then
+        # only add a new value
+        git config --file .gitmodules --add "$full_key" "$value"
+    fi
+}
+
+##
+# Gets all configured submodule names.
+##
+config_service::get_configured_names() {
+    local names=()
+    local options=(--file .gitmodules --name-only --get-regexp .path)
+
+    for name in $(git config ${options[@]}); do
+        names+=($(echo $name | cut -d '.' -f 2))
+    done
+
+    echo ${names[@]}
+}
+
+##
+# Gets all configured submodule paths.
+##
+config_service::get_configured_paths() {
+    local paths=()
+
+    for key in $(__config_service::get_keys_for_item "path"); do
+        paths+=($(git config --file .gitmodules --get "$key"))
+    done
+
+    echo ${paths[@]}
+}
+
+##
+# Gets a name for a given submodule path, with an optional submodule base path,
+# to allow querying of config of installed submodules.
+##
+config_service::get_name_for_path() {
+    local path=${1:?"A path is required"}
+    local base=${2:-"./"}
+
+    local config=$(git config --file $base/.gitmodules --get-regexp .path)
+
+    echo "${config[@]}" | grep $path | cut -d ' ' -f 1 | cut -d '.' -f 2
+}
+
+##
+# Gets a repo for a given submodule path, with an optional submodule base path,
+# to allow querying of config of installed submodules.
+##
+config_service::get_repo_for_path() {
+    local path=${1:?"A path is required"}
+    local base=${2:-"./"}
+
+    __config_service::get_config_item_for_path "url" $path $base
+}
+
+##
+# Gets a branch for a given submodule path, with an optional submodule base path,
+# to allow querying of config of installed submodules.
+##
+config_service::get_branch_for_path() {
+    local path=${1:?"A path is required"}
+    local base=${2:-"./"}
+
+    __config_service::get_config_item_for_path "branch" $path $base
+}
+
+##
+# Finds a submodule path from a submodule name or path value.
+##
+config_service::find_path_for_value() {
+    local value="$1"
+    local path=$(git config --file .gitmodules --get submodule.$value.path)
+
+    if [[ -n "$path" ]]; then
+        echo "$path"
+
+        return 0
+    fi
+
+    for path in $(config_service::get_configured_paths); do
+        if [[ $path =~ ^$value$ ]]; then
+            echo "$path"
+
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+##
+# Gets a specified submodule config item for a given path.
+##
+__config_service::get_config_item_for_path() {
+    local item=${1:?"An item is required"}
+    local path=${2:?"A path is required"}
+    local base=${3:-"./"}
+
+    local section="$(config_service::get_name_for_path "$path" "$base")"
+
+    echo $(git config --file $base/.gitmodules --get submodule.$section.$item)
+}
+
+##
+# Gets the submodule config keys for a given config item.
+##
+__config_service::get_keys_for_item() {
+    local item=${1:?"An item key is required"}
+
+    echo $(git config --file .gitmodules --name-only --get-regexp .$item)
+}

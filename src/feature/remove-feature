@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
-source "$service/autoload-service"
-source "$service/submodule-service"
+source "$SERVICE/autoload-service"
+source "$SERVICE/config-service"
+source "$SERVICE/submodule-service"
 
 ##
 # Removes all registered submodules.
 ##
 remove_feature::remove_all() {
-    for path in $(submodule_service::get_configured_paths); do
+    for path in $(config_service::get_configured_paths); do
         __remove_feature::remove $path
     done
 }
@@ -19,13 +20,13 @@ remove_feature::remove_named() {
     local submodules=$@
 
     for submodule in ${submodules[@]}; do
-        local path=$(submodule_service::get_path_for_value "$submodule")
+        local path=$(config_service::find_path_for_value "$submodule")
 
         if [[ -z $path ]] ; then
             echo "The submodule '$submodule' is not installed!"
 
             echo "Configured submodule paths:"
-            for path in $(submodule_service::get_configured_paths); do
+            for path in $(config_service::get_configured_paths); do
                 echo " - $path"
             done
 
@@ -48,7 +49,8 @@ __remove_feature::remove() {
     submodule_service::remove_path_directories $path
     submodule_service::force_remove_index $path
 
-    local remaining=($(submodule_service::get_configured_paths))
+    local remaining=($(config_service::get_configured_paths))
+
     if [[ ${#remaining[@]} -eq 0 ]]; then
         autoload_service::remove
         submodule_service::remove_config

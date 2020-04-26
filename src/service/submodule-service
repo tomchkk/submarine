@@ -1,10 +1,74 @@
 #!/usr/bin/env bash
 
+source "$SERVICE/config-service"
+
+__submodule_service_git_path="$GIT_PATH"
+__submodule_service_submodules_dir="$SUBMODULES_DIR"
+__submodule_service_submodules_path="$GIT_PATH/$SUBMODULES_DIR"
+
 ##
-# Adds a git submodule to a project.
+# Recursively adds a git submodule and its dependencies to a project.
 ##
 submodule_service::add() {
-    git submodule add $@
+    local super_module="$1"
+    local options="${@:2}"
+    local super_path=$(for option in ${options[@]}; do :; done; echo "$option")
+
+    git submodule add ${options[@]}
+
+    local super_name=$(config_service::get_name_for_path "$super_path")
+
+    if "$super_module"; then
+        config_service::add_key "$super_name" "super" true
+    fi
+
+    local dependencies=($(__submodule_service::get_dependencies_for_path "$super_path"))
+    local dependency_path
+    for dependency_path in ${dependencies[@]}; do
+        dependency_path=${dependency_path/$super_path\/}
+        echo "Adding dependency '$dependency_path' for '$super_path'"
+
+        local dependency_name=$(config_service::get_name_for_path "$dependency_path" "$super_path")
+
+        if ! $(config_service::get_configured_paths | grep -q "$dependency_path"); then
+            local dependency_options=(
+                --branch $(config_service::get_branch_for_path "$dependency_path" "$super_path")
+                --name "$dependency_name"
+                --
+                $(config_service::get_repo_for_path "$dependency_path" "$super_path")
+                "$dependency_path"
+            )
+
+            submodule_service::add false "${dependency_options[@]}"
+        else
+            echo "'$dependency_path' is already required"
+        fi
+
+        # update dependency config
+        config_service::add_key "$super_name" "dependency" "$dependency_name"
+        config_service::add_key "$dependency_name" "super" "$super_name"
+    done
+}
+
+##
+# Gets an array of dependency paths for a given submodule path.
+##
+__submodule_service::get_dependencies_for_path() {
+    local path="${1:?"A path is required"}"
+    local states=($(git submodule status --recursive $path))
+    local dependencies=()
+
+    for state in "${states[@]}"; do
+        case "$state" in
+            **/**)
+                if [[ "$state" != "$path" ]]; then
+                    dependencies+=("$state")
+                fi
+            ;;
+        esac
+    done
+
+    echo ${dependencies[@]}
 }
 
 ##
@@ -24,33 +88,6 @@ submodule_service::update_path() {
     local path=${1:?"A submodule path is required"}
 
     git submodule update --force --checkout --remote $path
-}
-
-##
-# Gets all configured submodule names.
-##
-submodule_service::get_configured_names() {
-    local names=()
-    local options=(--file .gitmodules --name-only --get-regexp .path)
-
-    for name in $(git config ${options[@]}); do
-        names+=($(echo $name | cut -d '.' -f 2))
-    done
-
-    echo ${names[@]}
-}
-
-##
-# Gets all configured submodule paths.
-##
-submodule_service::get_configured_paths() {
-    local paths=()
-
-    for key in $(__submodule_service::get_keys_for_item "path"); do
-        paths+=($(git config --file .gitmodules --get "$key"))
-    done
-
-    echo ${paths[@]}
 }
 
 ##
@@ -77,7 +114,7 @@ submodule_service::remove_path_directories() {
     local path=${1:?"A submodule path is required"}
 
     for candidate in $(__submodule_service::get_dir_sequence "$path"); do
-        local dir="$GIT_DIR/$MODULES_DIR/$candidate"
+        local dir="$__submodule_service_submodules_path/$candidate"
 
         if [[ -n "$(ls -A $dir 2>/dev/null)" ]]; then
             echo " - skipping non-empty '$candidate'"
@@ -90,7 +127,7 @@ submodule_service::remove_path_directories() {
         # remove empty submodule directory
         rm -d "$dir"
         # remove corresponding git module directory
-        rm -rf "$GIT_DIR/.git/modules/$candidate"
+        rm -rf "$__submodule_service_git_path/.git/modules/$candidate"
     done
 }
 
@@ -104,103 +141,21 @@ submodule_service::force_remove_index() {
 }
 
 ##
-# Finds a submodule path from a submodule name or path value.
-##
-submodule_service::get_path_for_value() {
-    local value="$1"
-    local path=$(git config --file .gitmodules --get submodule.$value.path)
-
-    if [[ -n "$path" ]]; then
-        echo "$path"
-
-        return 0
-    fi
-
-    for path in $(submodule_service::get_configured_paths); do
-        if [[ $path =~ ^$value$ ]]; then
-            echo "$path"
-
-            return 0
-        fi
-    done
-
-    return 1
-}
-
-##
-# Gets a name for a given submodule path, with an optional submodule base path,
-# to allow querying of config of installed submodules.
-##
-submodule_service::get_name_for_path() {
-    local path=${1:?"A path is required"}
-    local base=${2:-"./"}
-
-    local config=$(git config --file $base/.gitmodules --get-regexp .path)
-
-    echo "${config[@]}" | grep $path | cut -d ' ' -f 1 | cut -d '.' -f 2
-}
-
-##
-# Gets a repo for a given submodule path, with an optional submodule base path,
-# to allow querying of config of installed submodules.
-##
-submodule_service::get_repo_for_path() {
-    local path=${1:?"A path is required"}
-    local base=${2:-"./"}
-
-    # echo $(git config --file $base/.gitmodules --get submodule.$name.url)
-    __submodule_service::get_config_item_for_path "url" $path
-}
-
-##
-# Gets a branch for a given submodule path, with an optional submodule base path,
-# to allow querying of config of installed submodules.
-##
-submodule_service::get_branch_for_path() {
-    local path=${1:?"A path is required"}
-    local base=${2:-"./"}
-
-    __submodule_service::get_config_item_for_path "branch" $path
-}
-
-##
 # Removes the configured submodule directory, .git/modules directory and the
 # .gitmodules file.
 ##
 submodule_service::remove_config() {
-    if [[ -d "$GIT_DIR/$MODULES_DIR" ]]; then
-        rm -d "$GIT_DIR/$MODULES_DIR"
+    if [[ -d "$__submodule_service_submodules_path" ]]; then
+        rm -d "$__submodule_service_submodules_path"
     fi
 
-    if [[ -f "$GIT_DIR/.gitmodules" ]]; then
-        rm "$GIT_DIR/.gitmodules"
+    if [[ -f "$__submodule_service_git_path/.gitmodules" ]]; then
+        rm "$__submodule_service_git_path/.gitmodules"
     fi
 
-    if [[ -d "$GIT_DIR/.git/modules" ]]; then
-        rm -d "$GIT_DIR/.git/modules"
+    if [[ -d "$__submodule_service_git_path/.git/modules" ]]; then
+        rm -d "$__submodule_service_git_path/.git/modules"
     fi
-}
-
-##
-# Gets a specified submodule config item for a given path.
-##
-__submodule_service::get_config_item_for_path() {
-    local item=${1:?"An item is required"}
-    local path=${2:?"A path is required"}
-    local base=${3:-"./"}
-
-    local name=$(submodule_service::get_name_for_path $path)
-
-    echo $(git config --file $base/.gitmodules --get submodule.$name.$item)
-}
-
-##
-# Gets the submodule config keys for a given config item.
-##
-__submodule_service::get_keys_for_item() {
-    local item=${1:?"An item key is required"}
-
-    echo $(git config --file .gitmodules --name-only --get-regexp .$item)
 }
 
 ##
@@ -212,12 +167,12 @@ __submodule_service::get_keys_for_item() {
 ##
 __submodule_service::get_dir_sequence() {
     local path=${1:?"A submodule path is required"}
-    local project=$(echo $path | sed -E "s|^$MODULES_DIR/||")
-    local submodules_dir="$GIT_DIR/$MODULES_DIR"
+    local project=$(echo $path | sed -E "s|^$__submodule_service_submodules_dir/||")
+    local submodules_path="$__submodule_service_submodules_path"
     local sequence=()
 
-    for candidate in $(find "$submodules_dir" -type d); do
-        candidate=$(echo $candidate | sed -E "s|^$submodules_dir/||")
+    for candidate in $(find "$submodules_path" -type d); do
+        candidate=$(echo $candidate | sed -E "s|^$submodules_path/||")
 
         if [[ "$project/" =~ ^"$candidate/" ]]; then
             sequence+=("$candidate")

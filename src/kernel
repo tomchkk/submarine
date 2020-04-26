@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 
 # try to get base git directory of the project being navigated
-GIT_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
+GIT_PATH=$(git rev-parse --show-toplevel 2>/dev/null)
 
-if [[ -z "$GIT_DIR" ]]; then
+if [[ -z "$GIT_PATH" ]]; then
     echo "You are not in a git repository!"
 
     return 1
 fi
 
 # cd to the top-level git dir in the main process
-cd "$GIT_DIR"
+cd "$GIT_PATH"
 
-command="$__app_src/command"
-feature="$__app_src/feature"
-service="$__app_src/service"
+COMMAND="$__app_src/command"
+FEATURE="$__app_src/feature"
+SERVICE="$__app_src/service"
 
-source "$command/app-command" $@
+source "$COMMAND/app-command" $@

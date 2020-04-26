@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source "$feature/list-feature"
+source "$FEATURE/list-feature"
 
 ##
 # Cats the command's usage documentation.

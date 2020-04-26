@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source "$feature/require-feature"
+source "$FEATURE/require-feature"
 
 ##
 # Cats the command's usage documentation.
@@ -16,7 +16,7 @@ Usage:  $APP_NAME require [<options>] [--] <repo> [<name>]
 
 Options:
     -b, --branch    The required branch (default: master)
-    -n, --dry-run   Performs a dry-run of the require command
+    -f, --force     Allows adding an otherwise ignored submodule path
     -h, --help      Print usage information
 
 EOF
@@ -26,36 +26,46 @@ EOF
 # Handles incoming command requests.
 ##
 __require_command::handle() {
-    local dry=false
-    local branch="master"
     local args=()
+    local branch="master"
+    local force=false
+    local positionals=()
 
     while [[ "$#" -gt 0 ]]; do
         case $1 in
             -b|--branch)
                 branch="$2" && shift
             ;;
-            -n|--dry-run)
-                dry=true
+            -f|--force)
+                force=true
             ;;
             -h|-*|--help|--*)
                 __require_command::usage && return 0
             ;;
             *)
-                args+=("$1")
+                positionals+=("$1")
             ;;
         esac
 
         shift
     done
 
-    if $dry; then
-        require_feature::require_dry_run "$branch" ${args[@]}
-
-        return 0
+    if [[ ${#positionals[@]} -eq 0 ]]; then
+        __require_command::usage && return 0
     fi
 
-    require_feature::require "$branch" ${args[@]}
+    local name="${positionals[1]:-$(
+        require_feature::parse_name_from_repo "${positionals[0]}"
+    )}"
+    positionals[1]="$SUBMODULES_DIR/$name"
+
+    local options=(
+        --branch "$branch"
+        $($force && echo "--force")
+        --name "$name"
+    )
+
+    require_feature::require "${options[@]}" -- "${positionals[@]}"
 }
 
 # handle empty args

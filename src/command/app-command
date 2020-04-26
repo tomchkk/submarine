@@ -38,22 +38,22 @@ __app_command::handle() {
 
     case "$opt" in
         install)
-            source "$command/install-command" "${args[@]}"
+            source "$COMMAND/install-command" "${args[@]}"
         ;;
         list)
-            source "$command/list-command" "${args[@]}"
+            source "$COMMAND/list-command" "${args[@]}"
         ;;
         remove)
-            source "$command/remove-command" "${args[@]}"
+            source "$COMMAND/remove-command" "${args[@]}"
         ;;
         require)
-            source "$command/require-command" "${args[@]}"
+            source "$COMMAND/require-command" "${args[@]}"
         ;;
         uninstall)
-            source "$command/uninstall-command" "${args[@]}"
+            source "$COMMAND/uninstall-command" "${args[@]}"
         ;;
         update)
-            source "$command/update-command" "${args[@]}"
+            source "$COMMAND/update-command" "${args[@]}"
         ;;
         *)
             __app_command::usage

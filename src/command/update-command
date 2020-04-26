@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source "$feature/update-feature"
+source "$FEATURE/update-feature"
 
 ##
 # Cats the command's usage documentation.

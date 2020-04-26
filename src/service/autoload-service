@@ -1,27 +1,32 @@
 #!/usr/bin/env bash
 
-__autoload_service_modules_dir="$GIT_DIR/$MODULES_DIR"
+__autoload_service_submodules_path="$GIT_PATH/$SUBMODULES_DIR"
+__autoload_service_autoload_resource="$AUTOLOAD_RESOURCE"
 
 ##
 # Refresh the submarine autoload file.
 ##
 autoload_service::refresh() {
-    if [[ ! -d "$__autoload_service_modules_dir" ]]; then
+    if [[ ! -d "$__autoload_service_submodules_path" ]]; then
         echo "The directory for submodules does not exist!"
 
         return 1
     fi
 
-    cp -f "$AUTOLOAD_RESOURCE" "$__autoload_service_modules_dir/"
+    cp -f "$__autoload_service_autoload_resource" "$__autoload_service_submodules_path/"
+
+    # TODO: add to project's .gitignore, if it's not already there
 }
 
 ##
 # Removes the submarine autoload file.
 ##
 autoload_service::remove() {
-    local file=$(basename "$AUTOLOAD_RESOURCE")
+    local file=$(basename "$__autoload_service_autoload_resource")
 
-    if [[ -f "$__autoload_service_modules_dir/$file" ]]; then
-        rm -f "$__autoload_service_modules_dir/$file"
+    if [[ -f "$__autoload_service_submodules_path/$file" ]]; then
+        rm -f "$__autoload_service_submodules_path/$file"
     fi
+
+    # TODO: remove from project's .gitignore, if it's there
 }
