@@ -21,10 +21,10 @@ autoload_service::refresh() {
     cp -f "$resource_file" "$submodules_path/"
 
     # add autoload path to project's .gitignore
-    if [[ ! -e .gitignore ]]; then
-        echo "$project_file" > .gitignore
-    elif $(grep -q "^${project_file}$" .gitignore); then
+    if [[ -e .gitignore ]] && ! $(grep -q "^${project_file}$" .gitignore); then
         echo "$project_file" >> .gitignore
+    else
+        echo "$project_file" > .gitignore
     fi
 }
 

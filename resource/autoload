@@ -18,8 +18,6 @@ __submarine_autoload::handle() {
 __submarine_autoload::submodules() {
     export -f __submarine_autoload::handle
 
-    # TODO: may need to use the --recursive flag to ensure any sub-installed
-    # dependencies are also loaded
     local submodules=($(
         cd $(dirname ${BASH_SOURCE[0]})
         git submodule foreach --quiet '
