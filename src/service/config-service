@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+__config_service_super_key="super"
+__config_service_super_module_indicator="self"
+__config_service_dependency_key="dependency"
+
 ##
 # Adds a config key value to git submodule config, if it doesn't already exist.
 ##
@@ -15,6 +19,39 @@ config_service::add_key() {
         # only add a new value
         git config --file .gitmodules --add "$full_key" "$value"
     fi
+}
+
+##
+# Adds a config key to a submodule to indicate a submodule is a 'super' module
+# - i.e.: a top-level required module.
+##
+config_service::set_as_super_module() {
+    local name="${1:?"A super module name is required"}"
+
+    local args=("$name" "$__config_service_super_module_indicator")
+    config_service::set_dependency_super ${args[@]}
+}
+
+##
+# Adds a config key to a submodule to indicate a super module's dependencies.
+##
+config_service::set_super_dependency() {
+    local super="${1:?"A super module name is required"}"
+    local dependency="${2:?"A dependency module name is required"}"
+
+    local args=("$super" "$__config_service_dependency_key" "$dependency")
+    config_service::add_key ${args[@]}
+}
+
+##
+# Adds a config key to a submodule to indicate a dependency's super module.
+##
+config_service::set_dependency_super() {
+    local dependency="${1:?"A dependency module name is required"}"
+    local super="${2:?"A super module name is required"}"
+
+    local args=("$dependency" "$__config_service_super_key" "$super")
+    config_service::add_key ${args[@]}
 }
 
 ##

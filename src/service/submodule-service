@@ -19,20 +19,26 @@ submodule_service::add() {
     local super_name=$(config_service::get_name_for_path "$super_path")
 
     if "$super_module"; then
-        config_service::add_key "$super_name" "super" true
+        config_service::set_as_super_module "$super_name"
     fi
 
-    local dependencies=($(__submodule_service::get_dependencies_for_path "$super_path"))
+    local dependencies=(
+        $(__submodule_service::get_dependencies_for_path "$super_path")
+    )
     local dependency_path
     for dependency_path in ${dependencies[@]}; do
         dependency_path=${dependency_path/$super_path\/}
         echo "Adding dependency '$dependency_path' for '$super_path'"
 
-        local dependency_name=$(config_service::get_name_for_path "$dependency_path" "$super_path")
+        local dependency_name=$(
+            config_service::get_name_for_path "$dependency_path" "$super_path"
+        )
 
         if ! $(config_service::get_configured_paths | grep -q "$dependency_path"); then
             local dependency_options=(
-                --branch $(config_service::get_branch_for_path "$dependency_path" "$super_path")
+                --branch $(
+                    config_service::get_branch_for_path "$dependency_path" "$super_path"
+                )
                 --name "$dependency_name"
                 --
                 $(config_service::get_repo_for_path "$dependency_path" "$super_path")
@@ -45,8 +51,8 @@ submodule_service::add() {
         fi
 
         # update dependency config
-        config_service::add_key "$super_name" "dependency" "$dependency_name"
-        config_service::add_key "$dependency_name" "super" "$super_name"
+        config_service::set_super_dependency "$super_name" "$dependency_name"
+        config_service::set_dependency_super "$dependency_name" "$super_name"
     done
 }
 
