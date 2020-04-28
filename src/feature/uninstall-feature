@@ -44,5 +44,5 @@ __uninstall_feature::uninstall() {
 
     echo "Uninstalling $path..."
 
-    submodule_service::force_remove_repo $path
+    submodule_service::force_uninstall_repo $path
 }

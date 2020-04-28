@@ -99,77 +99,6 @@ submodule_service::remove_indiscriminately() {
 }
 
 ##
-# Performs the actual removal of a submodule.
-##
-__submodule_service::do_remove() {
-    local path=${1:?"A submodule path is required"}
-
-    submodule_service::force_remove_repo $path
-    submodule_service::remove_path_directories $path
-    submodule_service::force_remove_index $path
-}
-
-##
-# Performs post submodule removal tasks.
-##
-__submodule_service::post_remove() {
-    local remaining=($(config_service::get_configured_paths))
-
-    if [[ ${#remaining[@]} -eq 0 ]]; then
-        autoload_service::remove
-        submodule_service::remove_config
-    fi
-
-    git add .gitmodules
-}
-
-##
-# Performs pre submodule removal tasks.
-##
-__submodule_service::pre_remove() {
-    local path="${1:?"A submodule path is required"}"
-    local super_path="$2"
-
-    local can_remove=$(
-        __submodule_service::can_remove_path "$path" "$super_path"
-        echo $?
-    )
-    local name=$(config_service::get_name_for_path "$path")
-
-    # whether or not we can actually remove the path, we need to remove its
-    # reference to the super module requesting the path's removal:
-    config_service::remove_dependency_super "$name" "$super_path"
-
-    # the above config changes must be staged for further removals to work
-    git add .gitmodules
-
-    return $can_remove
-}
-
-##
-# Determines if a path can be removed, which depends on whether or not it has
-# any other governing super modules.
-##
-__submodule_service::can_remove_path() {
-    local path="${1:?"A submodule path is required"}"
-    local super_path="$2"
-
-    if [[ -n "$super_path" ]] \
-    && [[ $(config_service::path_super_count "$super_path") -gt 0 ]] \
-    && ! $(config_service::path_is_dependency_of_super "$super_path"); then
-        # the path's super also has a super, so it is _not_ self-governing
-        return 1
-    fi
-
-    if [[ $(config_service::path_super_count "$path") -gt 1 ]]; then
-        # a path with more than one super should still be governed by it
-        return 1
-    fi
-
-    return $(config_service::path_is_dependency_of_super "$path" "$super_path")
-}
-
-##
 # Installs the submodule for a path.
 ##
 submodule_service::install_path() {
@@ -196,10 +125,10 @@ submodule_service::get_installed_paths() {
 }
 
 ##
-# Removes the submodule repo code from the given submodule path, ignoring any
+# Uninstalls the submodule repo code from the given submodule path, ignoring any
 # local submodule changes.
 ##
-submodule_service::force_remove_repo() {
+submodule_service::force_uninstall_repo() {
     local path=${1:?"A submodule path is required"}
 
     git submodule deinit --force -- $path
@@ -275,6 +204,77 @@ __submodule_service::get_dependencies_for_path() {
     done
 
     echo ${dependencies[@]}
+}
+
+##
+# Performs the actual removal of a submodule.
+##
+__submodule_service::do_remove() {
+    local path=${1:?"A submodule path is required"}
+
+    submodule_service::force_uninstall_repo $path
+    submodule_service::remove_path_directories $path
+    submodule_service::force_remove_index $path
+}
+
+##
+# Performs post submodule removal tasks.
+##
+__submodule_service::post_remove() {
+    local remaining=($(config_service::get_configured_paths))
+
+    if [[ ${#remaining[@]} -eq 0 ]]; then
+        autoload_service::remove
+        submodule_service::remove_config
+    fi
+
+    git add .gitmodules
+}
+
+##
+# Performs pre submodule removal tasks.
+##
+__submodule_service::pre_remove() {
+    local path="${1:?"A submodule path is required"}"
+    local super_path="$2"
+
+    local can_remove=$(
+        __submodule_service::can_remove_path "$path" "$super_path"
+        echo $?
+    )
+    local name=$(config_service::get_name_for_path "$path")
+
+    # whether or not we can actually remove the path, we need to remove its
+    # reference to the super module requesting the path's removal:
+    config_service::remove_dependency_super "$name" "$super_path"
+
+    # the above config changes must be staged for further removals to work
+    git add .gitmodules
+
+    return $can_remove
+}
+
+##
+# Determines if a path can be removed, which depends on whether or not it has
+# any other governing super modules.
+##
+__submodule_service::can_remove_path() {
+    local path="${1:?"A submodule path is required"}"
+    local super_path="$2"
+
+    if [[ -n "$super_path" ]] \
+    && [[ $(config_service::path_super_count "$super_path") -gt 0 ]] \
+    && ! $(config_service::path_is_dependency_of_super "$super_path"); then
+        # the path's super also has a super, so it is _not_ self-governing
+        return 1
+    fi
+
+    if [[ $(config_service::path_super_count "$path") -gt 1 ]]; then
+        # a path with more than one super should still be governed by it
+        return 1
+    fi
+
+    return $(config_service::path_is_dependency_of_super "$path" "$super_path")
 }
 
 ##
