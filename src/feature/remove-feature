@@ -9,12 +9,12 @@ source "$SERVICE/submodule-service"
 ##
 remove_feature::remove_all() {
     for path in $(config_service::get_configured_paths); do
-        __remove_feature::remove $path
+        submodule_service::remove_indiscriminately $path
     done
 }
 
 ##
-# Removes the given submodule paths or names.
+# Removes the given submodule paths or names and their dependencies.
 ##
 remove_feature::remove_named() {
     local submodules=$@
@@ -33,35 +33,6 @@ remove_feature::remove_named() {
             return 1
         fi
 
-        __remove_feature::remove $path
+        submodule_service::remove $path
     done
-}
-
-##
-# Removes a submodule from a project.
-##
-__remove_feature::remove() {
-    local path="${1:?"A submodule path is required"}"
-
-    submodule_service::remove "$path"
-}
-
-##
-# Removes the submodule at the given path.
-##
-__remove_feature::remove_submodule() {
-    local path=${1:?"A submodule path is required"}
-
-    echo "Removing submodule: '$path'"
-
-    submodule_service::force_remove_repo $path
-    submodule_service::remove_path_directories $path
-    submodule_service::force_remove_index $path
-
-    local remaining=($(config_service::get_configured_paths))
-
-    if [[ ${#remaining[@]} -eq 0 ]]; then
-        autoload_service::remove
-        submodule_service::remove_config
-    fi
 }

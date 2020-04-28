@@ -61,7 +61,9 @@ submodule_service::add() {
 }
 
 ##
-# Removes a submodule and it's dependencies from a project.
+# Removes a submodule and it's dependencies from a project. If a dependency of a
+# removing submodule is also installed in its own right, only its dependency
+# relationship will be updated in submodule config.
 ##
 submodule_service::remove() {
     local path="${1:?"A submodule path is required"}"
@@ -81,6 +83,16 @@ submodule_service::remove() {
     for dependency_path in ${dependencies[@]}; do
         submodule_service::remove "${dependency_path/$path\/}" "$path"
     done
+
+    __submodule_service::do_remove "$path"
+    __submodule_service::post_remove
+}
+
+##
+# Removes a submodule, no questions asked, or thoughts given about dependencies.
+##
+submodule_service::remove_indiscriminately() {
+    local path="${1:?"A submodule path is required"}"
 
     __submodule_service::do_remove "$path"
     __submodule_service::post_remove
