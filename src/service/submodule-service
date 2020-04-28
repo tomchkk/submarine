@@ -14,9 +14,9 @@ submodule_service::add() {
     local options="${@:2}"
     local super_path=$(for option in ${options[@]}; do :; done; echo "$option")
 
-    git submodule add ${options[@]}
-
-    # TODO: add exit here for unsuccesful submodule fetch
+    if ! $(git submodule add ${options[@]}); then
+        return 1
+    fi
 
     local super=$(config_service::get_name_for_path "$super_path")
 

@@ -8,7 +8,10 @@ source "$SERVICE/submodule-service"
 ##
 require_feature::require() {
     submodule_service::add true "$@"
-    autoload_service::refresh
+
+    if [[ $? -eq 0 ]]; then
+        autoload_service::refresh
+    fi
 }
 
 ##
