@@ -135,57 +135,6 @@ submodule_service::force_uninstall_repo() {
 }
 
 ##
-# Removes vestigial submodule path directories.
-##
-submodule_service::remove_path_directories() {
-    local path=${1:?"A submodule path is required"}
-
-    for candidate in $(__submodule_service::get_dir_sequence "$path"); do
-        local dir="$__submodule_service_submodules_path/$candidate"
-
-        if [[ -n "$(ls -A $dir 2>/dev/null)" ]]; then
-            echo " - skipping non-empty '$candidate'"
-
-            break
-        fi
-
-        echo " - removing empty '$candidate'"
-
-        # remove empty submodule directory
-        rm -d "$dir"
-        # remove corresponding git module directory
-        rm -rf "$__submodule_service_git_path/.git/modules/$candidate"
-    done
-}
-
-##
-# Removes the submodule from the index.
-##
-submodule_service::force_remove_index() {
-    local path=${1:?"A submodule path is required"}
-
-    git rm --force "$path"
-}
-
-##
-# Removes the configured submodule directory, .git/modules directory and the
-# .gitmodules file.
-##
-submodule_service::remove_config() {
-    if [[ -d "$__submodule_service_submodules_path" ]]; then
-        rm -d "$__submodule_service_submodules_path"
-    fi
-
-    if [[ -f "$__submodule_service_git_path/.gitmodules" ]]; then
-        rm "$__submodule_service_git_path/.gitmodules"
-    fi
-
-    if [[ -d "$__submodule_service_git_path/.git/modules" ]]; then
-        rm -d "$__submodule_service_git_path/.git/modules"
-    fi
-}
-
-##
 # Gets an array of dependency paths for a given submodule path.
 ##
 __submodule_service::get_dependencies_for_path() {
@@ -204,31 +153,6 @@ __submodule_service::get_dependencies_for_path() {
     done
 
     echo ${dependencies[@]}
-}
-
-##
-# Performs the actual removal of a submodule.
-##
-__submodule_service::do_remove() {
-    local path=${1:?"A submodule path is required"}
-
-    submodule_service::force_uninstall_repo $path
-    submodule_service::remove_path_directories $path
-    submodule_service::force_remove_index $path
-}
-
-##
-# Performs post submodule removal tasks.
-##
-__submodule_service::post_remove() {
-    local remaining=($(config_service::get_configured_paths))
-
-    if [[ ${#remaining[@]} -eq 0 ]]; then
-        autoload_service::remove
-        submodule_service::remove_config
-    fi
-
-    git add .gitmodules
 }
 
 ##
@@ -255,6 +179,31 @@ __submodule_service::pre_remove() {
 }
 
 ##
+# Performs the actual removal of a submodule.
+##
+__submodule_service::do_remove() {
+    local path=${1:?"A submodule path is required"}
+
+    submodule_service::force_uninstall_repo $path
+    __submodule_service::remove_path_directories $path
+    __submodule_service::force_remove_index $path
+}
+
+##
+# Performs post submodule removal tasks.
+##
+__submodule_service::post_remove() {
+    local remaining=($(config_service::get_configured_paths))
+
+    if [[ ${#remaining[@]} -eq 0 ]]; then
+        autoload_service::remove
+        __submodule_service::remove_config
+    fi
+
+    git add .gitmodules
+}
+
+##
 # Determines if a path can be removed, which depends on whether or not it has
 # any other governing super modules.
 ##
@@ -275,6 +224,57 @@ __submodule_service::can_remove_path() {
     fi
 
     return $(config_service::path_is_dependency_of_super "$path" "$super_path")
+}
+
+##
+# Removes vestigial submodule path directories.
+##
+__submodule_service::remove_path_directories() {
+    local path=${1:?"A submodule path is required"}
+
+    for candidate in $(__submodule_service::get_dir_sequence "$path"); do
+        local dir="$__submodule_service_submodules_path/$candidate"
+
+        if [[ -n "$(ls -A $dir 2>/dev/null)" ]]; then
+            echo " - skipping non-empty '$candidate'"
+
+            break
+        fi
+
+        echo " - removing empty '$candidate'"
+
+        # remove empty submodule directory
+        rm -d "$dir"
+        # remove corresponding git module directory
+        rm -rf "$__submodule_service_git_path/.git/modules/$candidate"
+    done
+}
+
+##
+# Removes the submodule from the index.
+##
+__submodule_service::force_remove_index() {
+    local path=${1:?"A submodule path is required"}
+
+    git rm --force "$path"
+}
+
+##
+# Removes the configured submodule directory, .git/modules directory and the
+# .gitmodules file.
+##
+__submodule_service::remove_config() {
+    if [[ -d "$__submodule_service_submodules_path" ]]; then
+        rm -d "$__submodule_service_submodules_path"
+    fi
+
+    if [[ -f "$__submodule_service_git_path/.gitmodules" ]]; then
+        rm "$__submodule_service_git_path/.gitmodules"
+    fi
+
+    if [[ -d "$__submodule_service_git_path/.git/modules" ]]; then
+        rm -d "$__submodule_service_git_path/.git/modules"
+    fi
 }
 
 ##
