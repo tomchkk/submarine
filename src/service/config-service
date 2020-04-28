@@ -174,16 +174,16 @@ config_service::get_branch_for_path() {
 ##
 config_service::find_path_for_value() {
     local value="${1:?"A search value is required"}"
-    # TODO: add a normalize function, that also handles preceding './' in a path
-    value="$(echo "$value" | sed 's,\/$,,')"
 
-    local path=$(git config --file .gitmodules --get submodule.$value.path)
-
-    if [[ -n "$path" ]]; then
-        echo "$path"
+    local name=$(git config --file .gitmodules --get submodule.$value.path)
+    if [[ -n "$name" ]]; then
+        echo "$name"
 
         return 0
     fi
+
+    # value is not a name, but it may be a path, so let's normalise it first:
+    value="$(__config_service::normalize_path "$value")"
 
     for path in $(config_service::get_configured_paths); do
         if [[ $path =~ ^$value$ ]]; then
@@ -194,6 +194,15 @@ config_service::find_path_for_value() {
     done
 
     return 1
+}
+
+##
+# Normalizes an actual filesystem path to a submodule 'path'
+##
+__config_service::normalize_path() {
+    local path=${1:?"A path value is required"}
+
+    echo "$path" | sed -E 's,\.\/(.*),\1,;s,(.*)\/$,\1,'
 }
 
 ##
