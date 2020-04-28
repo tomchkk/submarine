@@ -38,9 +38,18 @@ remove_feature::remove_named() {
 }
 
 ##
-# Removes the given submodule.
+# Removes a submodule from a project.
 ##
 __remove_feature::remove() {
+    local path="${1:?"A submodule path is required"}"
+
+    submodule_service::remove "$path"
+}
+
+##
+# Removes the submodule at the given path.
+##
+__remove_feature::remove_submodule() {
     local path=${1:?"A submodule path is required"}
 
     echo "Removing submodule: '$path'"

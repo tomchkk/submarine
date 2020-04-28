@@ -7,7 +7,7 @@ __config_service_dependency_key="dependency"
 ##
 # Adds a config key value to git submodule config, if it doesn't already exist.
 ##
-config_service::add_key() {
+__config_service::add_key() {
     local section="${1:?"A config section is required"}"
     local key="${2?:"A config key is required"}"
     local value="${3:?"A config value is required"}"
@@ -22,10 +22,23 @@ config_service::add_key() {
 }
 
 ##
+# Removes a config key with a given value.
+##
+__config_service::remove_key_with_value() {
+    local section="${1:?"A config section is required"}"
+    local key="${2?:"A config key is required"}"
+    local value="${3:?"A config value is required"}"
+
+    local full_key="submodule.$section.$key"
+
+    git config --file .gitmodules --unset "$full_key" "^$value$"
+}
+
+##
 # Adds a config key to a submodule to indicate a submodule is a 'super' module
 # - i.e.: a top-level required module.
 ##
-config_service::set_as_super_module() {
+config_service::set_as_super() {
     local name="${1:?"A super module name is required"}"
 
     local args=("$name" "$__config_service_super_module_indicator")
@@ -40,7 +53,7 @@ config_service::set_super_dependency() {
     local dependency="${2:?"A dependency module name is required"}"
 
     local args=("$super" "$__config_service_dependency_key" "$dependency")
-    config_service::add_key ${args[@]}
+    __config_service::add_key ${args[@]}
 }
 
 ##
@@ -51,7 +64,47 @@ config_service::set_dependency_super() {
     local super="${2:?"A super module name is required"}"
 
     local args=("$dependency" "$__config_service_super_key" "$super")
-    config_service::add_key ${args[@]}
+    __config_service::add_key ${args[@]}
+}
+
+config_service::remove_dependency_super() {
+    local dependency="${1:?"A dependency module name is required"}"
+    local super="${2:-"$__config_service_super_module_indicator"}"
+
+    local args=("$dependency" "$__config_service_super_key" "$super")
+    __config_service::remove_key_with_value ${args[@]}
+}
+
+##
+# Gets a count of super modules for a given submodule path.
+##
+config_service::path_super_count() {
+    local path=${1:?"A path is required"}
+
+    local args=("$__config_service_super_key" "$path")
+    local supers=($(__config_service::get_all_config_item_for_path ${args[@]}))
+
+    echo ${#supers[@]}
+}
+
+##
+# Determines if the given path is a dependency of a given super module path.
+##
+config_service::path_is_dependency_of_super() {
+    local path="${1:?"A path is required"}"
+    local super_path="${2:-"$__config_service_super_module_indicator"}"
+
+    local args=("$__config_service_super_key" "$path")
+    local supers=$(__config_service::get_all_config_item_for_path ${args[@]})
+
+    local super
+    for super in ${supers[@]}; do
+        if [[ "$super" == "$super_path" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 ##
@@ -120,7 +173,10 @@ config_service::get_branch_for_path() {
 # Finds a submodule path from a submodule name or path value.
 ##
 config_service::find_path_for_value() {
-    local value="$1"
+    local value="${1:?"A search value is required"}"
+    # TODO: add a normalize function, that also handles preceding './' in a path
+    value="$(echo "$value" | sed 's,\/$,,')"
+
     local path=$(git config --file .gitmodules --get submodule.$value.path)
 
     if [[ -n "$path" ]]; then
@@ -151,6 +207,19 @@ __config_service::get_config_item_for_path() {
     local section="$(config_service::get_name_for_path "$path" "$base")"
 
     echo $(git config --file $base/.gitmodules --get submodule.$section.$item)
+}
+
+##
+# Gets a specified submodule config item for a given path.
+##
+__config_service::get_all_config_item_for_path() {
+    local item=${1:?"An item is required"}
+    local path=${2:?"A path is required"}
+    local base=${3:-"./"}
+
+    local section="$(config_service::get_name_for_path "$path" "$base")"
+
+    echo $(git config --file $base/.gitmodules --get-all submodule.$section.$item)
 }
 
 ##

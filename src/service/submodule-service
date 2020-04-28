@@ -10,16 +10,18 @@ __submodule_service_submodules_path="$GIT_PATH/$SUBMODULES_DIR"
 # Recursively adds a git submodule and its dependencies to a project.
 ##
 submodule_service::add() {
-    local super_module="$1"
+    local is_super="$1"
     local options="${@:2}"
     local super_path=$(for option in ${options[@]}; do :; done; echo "$option")
 
     git submodule add ${options[@]}
 
-    local super_name=$(config_service::get_name_for_path "$super_path")
+    # TODO: add exit here for unsuccesful submodule fetch
 
-    if "$super_module"; then
-        config_service::set_as_super_module "$super_name"
+    local super=$(config_service::get_name_for_path "$super_path")
+
+    if "$is_super"; then
+        config_service::set_as_super "$super"
     fi
 
     local dependencies=(
@@ -30,7 +32,7 @@ submodule_service::add() {
         dependency_path=${dependency_path/$super_path\/}
         echo "Adding dependency '$dependency_path' for '$super_path'"
 
-        local dependency_name=$(
+        local dependency=$(
             config_service::get_name_for_path "$dependency_path" "$super_path"
         )
 
@@ -39,7 +41,7 @@ submodule_service::add() {
                 --branch $(
                     config_service::get_branch_for_path "$dependency_path" "$super_path"
                 )
-                --name "$dependency_name"
+                --name "$dependency"
                 --
                 $(config_service::get_repo_for_path "$dependency_path" "$super_path")
                 "$dependency_path"
@@ -51,30 +53,108 @@ submodule_service::add() {
         fi
 
         # update dependency config
-        config_service::set_super_dependency "$super_name" "$dependency_name"
-        config_service::set_dependency_super "$dependency_name" "$super_name"
+        config_service::set_super_dependency "$super" "$dependency_path"
+        config_service::set_dependency_super "$dependency" "$super_path"
     done
+
+    git add .gitmodules
 }
 
 ##
-# Gets an array of dependency paths for a given submodule path.
+# Removes a submodule and it's dependencies from a project.
 ##
-__submodule_service::get_dependencies_for_path() {
-    local path="${1:?"A path is required"}"
-    local states=($(git submodule status --recursive $path))
-    local dependencies=()
+submodule_service::remove() {
+    local path="${1:?"A submodule path is required"}"
+    local super_path="$2"
 
-    for state in "${states[@]}"; do
-        case "$state" in
-            **/**)
-                if [[ "$state" != "$path" ]]; then
-                    dependencies+=("$state")
-                fi
-            ;;
-        esac
+    echo " - removing submodule: '$path'"
+
+    if ! $(__submodule_service::pre_remove "$path" "$super_path"); then
+        echo "  -> '$path' is a dependency of at least one other module. Skipping removal!"
+
+        return 1
+    fi
+
+    local dependencies=($(__submodule_service::get_dependencies_for_path "$path"))
+
+    local dependency_path
+    for dependency_path in ${dependencies[@]}; do
+        submodule_service::remove "${dependency_path/$path\/}" "$path"
     done
 
-    echo ${dependencies[@]}
+    __submodule_service::do_remove "$path"
+    __submodule_service::post_remove
+}
+
+##
+# Performs the actual removal of a submodule.
+##
+__submodule_service::do_remove() {
+    local path=${1:?"A submodule path is required"}
+
+    submodule_service::force_remove_repo $path
+    submodule_service::remove_path_directories $path
+    submodule_service::force_remove_index $path
+}
+
+##
+# Performs post submodule removal tasks.
+##
+__submodule_service::post_remove() {
+    local remaining=($(config_service::get_configured_paths))
+
+    if [[ ${#remaining[@]} -eq 0 ]]; then
+        autoload_service::remove
+        submodule_service::remove_config
+    fi
+
+    git add .gitmodules
+}
+
+##
+# Performs pre submodule removal tasks.
+##
+__submodule_service::pre_remove() {
+    local path="${1:?"A submodule path is required"}"
+    local super_path="$2"
+
+    local can_remove=$(
+        __submodule_service::can_remove_path "$path" "$super_path"
+        echo $?
+    )
+    local name=$(config_service::get_name_for_path "$path")
+
+    # whether or not we can actually remove the path, we need to remove its
+    # reference to the super module requesting the path's removal:
+    config_service::remove_dependency_super "$name" "$super_path"
+
+    # the above config changes must be staged for further removals to work
+    git add .gitmodules
+
+    return $can_remove
+}
+
+##
+# Determines if a path can be removed, which depends on whether or not it has
+# any other governing super modules.
+##
+__submodule_service::can_remove_path() {
+    local path="${1:?"A submodule path is required"}"
+    local super_path="$2"
+
+    if [[ -n "$super_path" ]] \
+    && [[ $(config_service::path_super_count "$super_path") -gt 0 ]] \
+    && ! $(config_service::path_is_dependency_of_super "$super_path"); then
+        # the path's super also has a super, so it is _not_ self-governing
+        return 1
+    fi
+
+    if [[ $(config_service::path_super_count "$path") -gt 1 ]]; then
+        # a path with more than one super should still be governed by it
+        return 1
+    fi
+
+    return $(config_service::path_is_dependency_of_super "$path" "$super_path")
 }
 
 ##
@@ -125,7 +205,7 @@ submodule_service::remove_path_directories() {
         if [[ -n "$(ls -A $dir 2>/dev/null)" ]]; then
             echo " - skipping non-empty '$candidate'"
 
-            continue
+            break
         fi
 
         echo " - removing empty '$candidate'"
@@ -165,6 +245,27 @@ submodule_service::remove_config() {
 }
 
 ##
+# Gets an array of dependency paths for a given submodule path.
+##
+__submodule_service::get_dependencies_for_path() {
+    local path="${1:?"A path is required"}"
+    local states=($(git submodule status --recursive $path))
+    local dependencies=()
+
+    for state in "${states[@]}"; do
+        case "$state" in
+            **/**)
+                if [[ "$state" != "$path" ]]; then
+                    dependencies+=("$state")
+                fi
+            ;;
+        esac
+    done
+
+    echo ${dependencies[@]}
+}
+
+##
 # Gets an array of directories, sequentially from the deepest to the nearest to
 # the base submodules directory for a submodule path - i.e.:
 # - vendor/directory/project-name
@@ -173,7 +274,9 @@ submodule_service::remove_config() {
 ##
 __submodule_service::get_dir_sequence() {
     local path=${1:?"A submodule path is required"}
-    local project=$(echo $path | sed -E "s|^$__submodule_service_submodules_dir/||")
+    local project=$(
+        echo $path | sed -E "s|^$__submodule_service_submodules_dir/||"
+    )
     local submodules_path="$__submodule_service_submodules_path"
     local sequence=()
 
