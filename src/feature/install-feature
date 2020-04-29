@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source "$SERVICE/autoload-service"
 source "$SERVICE/config-service"
 source "$SERVICE/submodule-service"
 
@@ -47,4 +48,8 @@ __install_feature::install() {
     echo "Installing '$path'..."
 
     submodule_service::install_path $path
+
+    if [[ $? -eq 0 ]]; then
+        autoload_service::refresh
+    fi
 }
