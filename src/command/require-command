@@ -12,7 +12,7 @@ $APP_NAME ($APP_VERSION) - Require
 
 Add required submodules to a project.
 
-Usage:  $APP_NAME require [<options>] [--] <repo> [<name>]
+Usage:  $APP_NAME require [<options>...] <repo> [<name>]
 
 Options:
     -b, --branch    The required branch (default: master)
@@ -29,7 +29,6 @@ __require_command::handle() {
     local args=()
     local branch="master"
     local force=false
-    # TODO: add local depth=1 here and to update commands too
     local positionals=()
 
     while [[ "$#" -gt 0 ]]; do

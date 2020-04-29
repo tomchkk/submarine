@@ -12,9 +12,7 @@ Install Submarine on your system and then use it in any git directory to manage 
 
 However, where git submodules will, by default, fetch one level of submodule dependencies, Submarine will fetch all dependencies recursively. However, instead of installing in recursive nested subdirectories, Submarine will add these dependency repos in a flattened structure within the configured submodules directory, thus avoiding the occurrence of multiple duplicated nested submodules.
 
-Also, by default, Submarine will only fetch a shallow clone of a repo, truncating the repo's history to 1 revision, which lightens a project's footprint.
-
-An installed submodule remains a git repo, however the core concept here is make any required updates to a dependency upstream and to strictly treat dependencies as third-parties.
+An installed submodule remains a git repo, however the core concept here is make changes to a dependency upstream and to strictly treat a dependency as a third-party.
 
 ## Versioning
 
