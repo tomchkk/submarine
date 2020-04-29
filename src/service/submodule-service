@@ -14,14 +14,18 @@ submodule_service::add() {
     local options="${@:2}"
     local super_path=$(for option in ${options[@]}; do :; done; echo "$option")
 
-    if ! $(git submodule add ${options[@]}); then
-        return 1
-    fi
-
+    local was_added=$(git submodule add ${options[@]}; echo $?)
     local super=$(config_service::get_name_for_path "$super_path")
 
-    if "$is_super"; then
+    if "$is_super" && [[ -n "$super" ]]; then
+        # any super repo should be marked as being 'super', as long as it was
+        # succesfully added or is already required
         config_service::set_as_super "$super"
+        git add .gitmodules
+    fi
+
+    if [[ $was_added -gt 0 ]]; then
+        return 1
     fi
 
     local dependencies=(

@@ -29,6 +29,7 @@ __require_command::handle() {
     local args=()
     local branch="master"
     local force=false
+    # TODO: add local depth=1 here and to update commands too
     local positionals=()
 
     while [[ "$#" -gt 0 ]]; do
