@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source "$SERVICE/gitignore-service"
+
 __autoload_service_submodules_path="$GIT_PATH/$SUBMODULES_DIR"
 __autoload_service_resource_file="$AUTOLOAD_RESOURCE"
 __autoload_service_project_file="$SUBMODULES_DIR/$(basename "$AUTOLOAD_RESOURCE")"
@@ -21,11 +23,7 @@ autoload_service::refresh() {
     cp -f "$resource_file" "$submodules_path/"
 
     # add autoload path to project's .gitignore
-    if [[ -e .gitignore ]] && ! $(grep -q "^${project_file}$" .gitignore); then
-        echo "$project_file" >> .gitignore
-    else
-        echo "$project_file" > .gitignore
-    fi
+    gitignore_service::add "$project_file"
 }
 
 ##
@@ -38,6 +36,6 @@ autoload_service::remove() {
         rm -f "$project_file"
     fi
 
-    # removes autoload file from project's .gitignore, if it's there
-    echo "$(grep -v "^${project_file}$" .gitignore)" > .gitignore
+    # removes autoload file from project's .gitignore
+    gitignore_service::remove "$project_file"
 }

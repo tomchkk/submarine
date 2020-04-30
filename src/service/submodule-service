@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source "$SERVICE/config-service"
+source "$SERVICE/gitignore-service"
 
 __submodule_service_git_path="$GIT_PATH"
 __submodule_service_submodules_dir="$SUBMODULES_DIR"
@@ -61,7 +62,8 @@ submodule_service::add() {
         config_service::set_dependency_super "$dependency" "$super_path"
     done
 
-    git add .gitmodules
+    __submodule_service::make_bin_links "$super_path"
+    __submodule_service::post_add
 }
 
 ##
@@ -118,7 +120,9 @@ submodule_service::install_path() {
 submodule_service::update_path() {
     local path=${1:?"A submodule path is required"}
 
-    git submodule update --force --checkout --remote $path
+    git submodule update --force --checkout --remote "$path"
+    __submodule_service::unset_bin_links "$path"
+    __submodule_service::make_bin_links "$path"
 }
 
 ##
@@ -160,6 +164,36 @@ __submodule_service::get_dependencies_for_path() {
 }
 
 ##
+# Makes available bin symlinks.
+##
+__submodule_service::make_bin_links() {
+    local submodule="${1:?"A submodule path is required"}"
+
+    local bin_dir="$__submodule_service_submodules_path/bin"
+    local bins=($(config_service::get_bins_for_path "$submodule"))
+
+    for bin in "${bins[@]}"; do
+        local bin="$__submodule_service_git_path/$submodule/$bin"
+
+        if [[ ! -d "$bin_dir" ]]; then
+            mkdir -p "$bin_dir"
+            gitignore_service::add "$__submodule_service_submodules_dir/bin"
+        fi
+
+        if [[ -e "$bin" ]]; then
+            ln -fs "$bin" "$bin_dir/$(basename "$bin")"
+        fi
+    done
+}
+
+##
+# Performs post submodule add tasks.
+##
+__submodule_service::post_add() {
+    git add .gitmodules
+}
+
+##
 # Performs pre submodule removal tasks.
 ##
 __submodule_service::pre_remove() {
@@ -188,6 +222,7 @@ __submodule_service::pre_remove() {
 __submodule_service::do_remove() {
     local path=${1:?"A submodule path is required"}
 
+    __submodule_service::unset_bin_links $path
     submodule_service::force_uninstall_repo $path
     __submodule_service::remove_path_directories $path
     __submodule_service::force_remove_index $path
@@ -231,6 +266,30 @@ __submodule_service::can_remove_path() {
 }
 
 ##
+# Unsets bin links for a submodule.
+##
+__submodule_service::unset_bin_links() {
+    local path="${1:?"A submodule path is required"}"
+
+    local bin_dir="$__submodule_service_submodules_path/bin"
+    local bins=($(config_service::get_bins_for_path "$path"))
+
+    for bin in "${bins[@]}"; do
+        local name="$(basename "$bin")"
+
+        if [[ -L "$bin_dir/$name" ]]; then
+            unlink "$bin_dir/$name"
+        fi
+    done
+
+    if [[ -z "$(ls -A "$bin_dir" 2>/dev/null)" ]]; then
+        # remove empty bin dir
+        rm -rf "$bin_dir"
+        gitignore_service::remove "$__submodule_service_submodules_dir/bin"
+    fi
+}
+
+##
 # Removes vestigial submodule path directories.
 ##
 __submodule_service::remove_path_directories() {
@@ -239,7 +298,7 @@ __submodule_service::remove_path_directories() {
     for candidate in $(__submodule_service::get_dir_sequence "$path"); do
         local dir="$__submodule_service_submodules_path/$candidate"
 
-        if [[ -n "$(ls -A $dir 2>/dev/null)" ]]; then
+        if [[ -n "$(ls -A "$dir" 2>/dev/null)" ]]; then
             echo " - skipping non-empty '$candidate'"
 
             break

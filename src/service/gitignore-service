@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+__gitignore_service_file="$GIT_PATH/.gitignore"
+
+##
+# Adds a given target item to the project .gitignore file.
+##
+gitignore_service::add() {
+    local target="${1:?"A target is required"}"
+
+    if [[ -f "$__gitignore_service_file" ]] \
+    && ! $(grep -q "^${target}$" "$__gitignore_service_file"); then
+        echo "$target" >> "$__gitignore_service_file"
+    else
+        echo "$target" > "$__gitignore_service_file"
+    fi
+}
+
+##
+# Removes a given target item from the project .gitignore file.
+##
+gitignore_service::remove() {
+    local target="${1:?"A target is required"}"
+
+    if $(grep -q "^${target}$" "$__gitignore_service_file"); then
+        local content="$(grep -v "^${target}$" "$__gitignore_service_file")"
+
+        if [[ -z "$content" ]]; then
+            # empties the file, as there is not more content
+            > "$__gitignore_service_file"
+        else
+            # replaces the whole file minus the target
+            echo "$content" > "$__gitignore_service_file"
+        fi
+    fi
+}
