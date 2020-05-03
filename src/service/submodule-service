@@ -120,8 +120,8 @@ submodule_service::update_path() {
     local path=${1:?"A submodule path is required"}
 
     git submodule update --force --checkout --remote "$path"
-    __submodule_service::unset_bin_links "$path"
-    __submodule_service::make_bin_links "$path"
+
+    __submodule_service::post_update "$path"
 }
 
 ##
@@ -163,7 +163,7 @@ __submodule_service::get_dependencies_for_path() {
 }
 
 ##
-# Performs post submodule add tasks.
+# Performs post-add submodule tasks.
 ##
 __submodule_service::post_add() {
     local submodule="${1:?"A submodule path is required"}"
@@ -172,6 +172,17 @@ __submodule_service::post_add() {
     __submodule_service::run_install_commands "$submodule"
 
     git add .gitmodules
+}
+
+##
+# Performs post-update submodule tasks.
+##
+__submodule_service::post_update() {
+    local submodule="${1:?"A submodule path is required"}"
+
+    __submodule_service::unset_bin_links "$submodule"
+    __submodule_service::make_bin_links "$submodule"
+    __submodule_service::run_install_commands "$submodule"
 }
 
 ##
