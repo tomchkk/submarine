@@ -170,12 +170,21 @@ config_service::get_branch_for_path() {
 }
 
 ##
-# Gets bin references for a given submodule path
+# Gets bin references for a given submodule path.
 ##
 config_service::get_bins_for_path() {
     local path=${1:?"A path is required"}
 
     echo $(git config --file $path/.gitmodules --get-all self.bin)
+}
+
+##
+# Gets install commands for a given submodule path.
+##
+config_service::get_install_for_path() {
+    local path=${1:?"A path is required"}
+
+    echo $(git config --file $path/.gitmodules --get-all self.install)
 }
 
 ##

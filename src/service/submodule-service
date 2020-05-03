@@ -62,8 +62,7 @@ submodule_service::add() {
         config_service::set_dependency_super "$dependency" "$super_path"
     done
 
-    __submodule_service::make_bin_links "$super_path"
-    __submodule_service::post_add
+    __submodule_service::post_add "$super_path"
 }
 
 ##
@@ -164,6 +163,18 @@ __submodule_service::get_dependencies_for_path() {
 }
 
 ##
+# Performs post submodule add tasks.
+##
+__submodule_service::post_add() {
+    local submodule="${1:?"A submodule path is required"}"
+
+    __submodule_service::make_bin_links "$submodule"
+    __submodule_service::run_install_commands "$submodule"
+
+    git add .gitmodules
+}
+
+##
 # Makes available bin symlinks.
 ##
 __submodule_service::make_bin_links() {
@@ -187,10 +198,16 @@ __submodule_service::make_bin_links() {
 }
 
 ##
-# Performs post submodule add tasks.
+# Runs install commands defined by a submodule.
 ##
-__submodule_service::post_add() {
-    git add .gitmodules
+__submodule_service::run_install_commands() {
+    local submodule="${1:?"A submodule path is required"}"
+
+    local cmds=($(config_service::get_install_for_path "$submodule"))
+
+    for cmd in "${cmds[@]}"; do
+        (cd "$PWD/$submodule" && "$cmd")
+    done
 }
 
 ##
