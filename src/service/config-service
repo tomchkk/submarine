@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 __config_service_super_key="super"
+__config_service_dev_key="dev"
 __config_service_super_module_indicator="self"
 __config_service_dependency_key="dependency"
 
@@ -43,6 +44,18 @@ config_service::set_as_super() {
 
     local args=("$name" "$__config_service_super_module_indicator")
     config_service::set_dependency_super ${args[@]}
+}
+
+##
+# Adds a config key to a submodule to indicate that a submodule is a 'dev'
+# requirement - i.e. is only a requirement of the immediate project, it will not
+# be required by projects installing it's parent.
+##
+config_service::set_as_dev() {
+    local name="${1:?"A super module name is required"}"
+
+    local args=("$name" "$__config_service_dev_key" true)
+    __config_service::add_key ${args[@]}
 }
 
 ##
@@ -132,6 +145,23 @@ config_service::get_configured_paths() {
     done
 
     echo ${paths[@]}
+}
+
+##
+# Determines if the the given dependency path is a dev dependency.
+##
+config_service::is_dev_dependency() {
+    local path=${1:?"A path is required"}
+    local base=${2:-"./"}
+
+    local args=("dev" "$path" "$base")
+    local is_dev=$(__config_service::get_config_item_for_path ${args[@]})
+
+    if [[ "$is_dev" == "true" ]]; then
+        echo true
+    else
+        echo false
+    fi
 }
 
 ##

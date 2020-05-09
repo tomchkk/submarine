@@ -16,6 +16,7 @@ Usage:  $APP_NAME require [<options>...] <repo> [<name>]
 
 Options:
     -b, --branch    The required branch (default: master)
+    -d, --dev       Add a requirement as development only
     -f, --force     Allows adding an otherwise ignored submodule path
     -h, --help      Print usage information
 
@@ -28,6 +29,7 @@ EOF
 __require_command::handle() {
     local args=()
     local branch="master"
+    local dev=false
     local force=false
     local positionals=()
 
@@ -35,6 +37,9 @@ __require_command::handle() {
         case $1 in
             -b|--branch)
                 branch="$2" && shift
+            ;;
+            -d|--dev)
+                dev=true
             ;;
             -f|--force)
                 force=true
@@ -65,7 +70,7 @@ __require_command::handle() {
         --name "$name"
     )
 
-    require_feature::require "${options[@]}" -- "${positionals[@]}"
+    require_feature::require "$dev" "${options[@]}" -- "${positionals[@]}"
 }
 
 # handle empty args

@@ -11,17 +11,26 @@ __submodule_service_submodules_path="$GIT_PATH/$SUBMODULES_DIR"
 # Recursively adds a git submodule and its dependencies to a project.
 ##
 submodule_service::add() {
-    local is_super="$1"
-    local options="${@:2}"
+    local is_super="${1:-true}"
+    local is_dev="${2:-false}"
+    local options="${@:3}"
+
     local super_path=$(for option in ${options[@]}; do :; done; echo "$option")
 
     local was_added=$(git submodule add ${options[@]}; echo $?)
     local super=$(config_service::get_name_for_path "$super_path")
 
+    # TODO: move functionality to a pre_add function
     if "$is_super" && [[ -n "$super" ]]; then
         # any super repo should be marked as being 'super', as long as it was
         # succesfully added or is already required
         config_service::set_as_super "$super"
+
+        if "$is_dev"; then
+            # we'll only set a super as dev, dev dependencies can be calculated
+            config_service::set_as_dev "$super"
+        fi
+
         git add .gitmodules
     fi
 
@@ -35,11 +44,18 @@ submodule_service::add() {
     local dependency_path
     for dependency_path in ${dependencies[@]}; do
         dependency_path=${dependency_path/$super_path\/}
-        echo "Adding dependency '$dependency_path' for '$super_path'"
+
+        if $(config_service::is_dev_dependency "$dependency_path" "$super_path"); then
+            echo "Skipping dev dependency '$dependency_path' for '$super_path'"
+
+            continue
+        fi
 
         local dependency=$(
             config_service::get_name_for_path "$dependency_path" "$super_path"
         )
+
+        echo "Adding dependency '$dependency_path' for '$super_path'"
 
         if ! $(config_service::get_configured_paths | grep -q "$dependency_path"); then
             local dependency_options=(
@@ -52,7 +68,7 @@ submodule_service::add() {
                 "$dependency_path"
             )
 
-            submodule_service::add false "${dependency_options[@]}"
+            submodule_service::add false false "${dependency_options[@]}"
         else
             echo "'$dependency_path' is already required"
         fi

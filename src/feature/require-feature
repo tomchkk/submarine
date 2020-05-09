@@ -7,7 +7,10 @@ source "$SERVICE/submodule-service"
 # Requires a new git repo as a submodule for a project.
 ##
 require_feature::require() {
-    submodule_service::add true "$@"
+    local is_dev="${1:-false}"
+    local options="${@:2}"
+
+    submodule_service::add true "$is_dev" "$options"
 
     if [[ $? -eq 0 ]]; then
         autoload_service::refresh
