@@ -8,9 +8,10 @@ source "$SERVICE/submodule-service"
 ##
 require_feature::require() {
     local is_dev="${1:-false}"
-    local options="${@:2}"
+    local version="${2:-false}"
+    local arguments="${@:3}"
 
-    submodule_service::add true "$is_dev" "$options"
+    submodule_service::add true "$is_dev" "$version" "$arguments"
 
     if [[ $? -eq 0 ]]; then
         autoload_service::refresh
