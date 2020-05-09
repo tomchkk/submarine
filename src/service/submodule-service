@@ -130,6 +130,16 @@ submodule_service::install_path() {
 }
 
 ##
+# Uninstalls the submodule for a path.
+##
+submodule_service::uninstall_path() {
+    local path=${1:?"A submodule path is required"}
+
+    __submodule_service::unset_bin_links $path
+    __submodule_service::force_uninstall_repo $path
+}
+
+##
 # Updates the submodule for a path.
 ##
 submodule_service::update_path() {
@@ -151,7 +161,7 @@ submodule_service::get_installed_paths() {
 # Uninstalls the submodule repo code from the given submodule path, ignoring any
 # local submodule changes.
 ##
-submodule_service::force_uninstall_repo() {
+__submodule_service::force_uninstall_repo() {
     local path=${1:?"A submodule path is required"}
 
     git submodule deinit --force -- $path
@@ -271,7 +281,7 @@ __submodule_service::do_remove() {
     local path=${1:?"A submodule path is required"}
 
     __submodule_service::unset_bin_links $path
-    submodule_service::force_uninstall_repo $path
+    __submodule_service::force_uninstall_repo $path
     __submodule_service::remove_path_directories $path
     __submodule_service::force_remove_index $path
 }
