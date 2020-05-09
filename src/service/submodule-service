@@ -109,8 +109,8 @@ submodule_service::remove_indiscriminately() {
 submodule_service::install_path() {
     local path=${1:?"A submodule path is required"}
 
-    git submodule init $path
-    git submodule update $path
+    git submodule init "$path"
+    submodule_service::update_path "$path"
 }
 
 ##
