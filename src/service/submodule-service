@@ -20,7 +20,6 @@ submodule_service::add() {
     local was_added=$(git submodule add ${options[@]}; echo $?)
     local super=$(config_service::get_name_for_path "$super_path")
 
-    # TODO: move functionality to a pre_add function
     if "$is_super" && [[ -n "$super" ]]; then
         # any super repo should be marked as being 'super', as long as it was
         # succesfully added or is already required
