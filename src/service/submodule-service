@@ -194,13 +194,17 @@ __submodule_service::make_bin_links() {
     local bin_dir="$__submodule_service_submodules_path/bin"
     local bins=($(config_service::get_bins_for_path "$submodule"))
 
-    for bin in "${bins[@]}"; do
-        local bin="$__submodule_service_git_path/$submodule/$bin"
-
+    if [[ ${#bins[@]} -gt 0 ]]; then
+        # we have bins to install, so let's ensure bin dir exists and is ignored
         if [[ ! -d "$bin_dir" ]]; then
             mkdir -p "$bin_dir"
-            gitignore_service::add "$__submodule_service_submodules_dir/bin"
         fi
+
+        gitignore_service::add "$__submodule_service_submodules_dir/bin"
+    fi
+
+    for bin in "${bins[@]}"; do
+        local bin="$__submodule_service_git_path/$submodule/$bin"
 
         if [[ -e "$bin" ]]; then
             ln -fs "$bin" "$bin_dir/$(basename "$bin")"
