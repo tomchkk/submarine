@@ -80,6 +80,9 @@ config_service::set_dependency_super() {
     __config_service::add_key ${args[@]}
 }
 
+##
+# Removes the config key for a submodule that indicates it's super module.
+##
 config_service::remove_dependency_super() {
     local dependency="${1:?"A dependency module name is required"}"
     local super="${2:-"$__config_service_super_module_indicator"}"
