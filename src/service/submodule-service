@@ -17,7 +17,7 @@ submodule_service::add() {
     local arguments="${@:4}"
 
     local super_path=$(for arg in ${arguments[@]}; do :; done; echo "$arg")
-    local was_added=$(git submodule add ${arguments[@]}; echo $?)
+    local was_added=$(git submodule add --depth 1 ${arguments[@]}; echo $?)
     local super=$(config_service::get_name_for_path "$super_path")
 
     if "$is_super" && [[ -n "$super" ]]; then
