@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+__tilde_strategy_constraint="$1"
+
+source "${2:?"A version examiner is required"}"
+
+##
+# Determines if the current constraint is satisfied by the given candidate.
+#
+# This strategy will test a tilde version range which specifies a minimum
+# version, but allows the **last digit specified** to go up.
+#
+# Examples:
+# - "~1.2.3" = ">=1.2.3 <1.3.0" (only patch version updates)
+# - "^1.2" = ">=1.2.0 <2.0.0" (only minor and patch version updates)
+# - "^1" = ">=1.0.0 <2.0.0" (only minor and patch version updates)
+##
+constraint_strategy::is_satisfied_by() {
+    local candidate="${1:?"A test candidate is required"}"
+
+    local min="${__tilde_strategy_constraint#\~}"
+
+    if [[ "$(version_examiner::compare $candidate $min)" == "<" ]]; then
+        # candidate is less than min
+        return 1
+    fi
+
+    local super="$(__tilde_strategy::calculate_supernumerary $min)"
+
+    if [[ "$(version_examiner::compare $candidate $super)" == "<" ]]; then
+        # candidate is less than the supernumerary version value
+        return 0
+    fi
+
+    return 1
+}
+
+##
+# Calculates the supernumerary version value for the tilde strategy - i.e. the
+# next version that will _not_ be supported - based on the given minimum version
+# value.
+##
+__tilde_strategy::calculate_supernumerary() {
+    local versions=(${1//./ })
+
+    local major="${versions[0]}"
+    local minor="${versions[1]}"
+
+    if [[ "${#versions[@]}" == 3 ]]; then
+        # the constraint has three elements, so we'll treat the minor version as
+        # the breaking change indicator
+        (( minor++ ))
+    else
+        (( major++ )) && minor=0
+    fi
+
+    echo "$major.$minor.0"
+}

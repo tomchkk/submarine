@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+
+__script_dir="$(dirname "${BASH_SOURCE[0]}")"
+source "$__script_dir/../../../../bootstrap"
+
+__strategy="$__src_dir/service/version/constraint/strategy/equivalence-strategy"
+
+equivalence_strategy_test::test_exact_version() {
+    local actual
+
+    # only an exact version should satisfy the constraint
+    source "$__strategy" "1.0.0"
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.0"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.1.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+}
+
+equivalence_strategy_test::test_only_wildcard() {
+    local actual
+
+    # any version should satisfy the constraint
+    source "$__strategy" "*"
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.0"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "x.x.x"; echo $?)
+    bash_test::assert_equals 0 $actual
+}
+
+equivalence_strategy_test::test_trailing_wildcard() {
+    local actual
+
+    # only the first numeric can satisify the constraint
+    source "$__strategy" "1.*"
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.0"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "2.0.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+
+    # only the first two numerics can satisfy the constraint
+    source "$__strategy" "1.0.*"
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.0"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.10"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.2.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "2.0.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+}
+
+equivalence_strategy_test::test_leading_wildcard() {
+    local actual
+
+    # only the last numeric can satisfy the constraint
+    source "$__strategy" "*.1"
+
+    actual=$(constraint_strategy::is_satisfied_by "1.1"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.1"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.2"; echo $?)
+    bash_test::assert_equals 1 $actual
+
+    # only the last two numerics can satisfy the constraint
+    source "$__strategy" "*.0.1"
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.1"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "2.0.1"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "2.0.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+}
+
+equivalence_strategy_test::test_central_wildcard() {
+    local actual
+
+    # only the outer numerics can satisfy the constraint
+    source "$__strategy" "1.*.1"
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.1"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.11.1"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "2.0.2"; echo $?)
+    bash_test::assert_equals 1 $actual
+}

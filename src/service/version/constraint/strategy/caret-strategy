@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+__caret_strategy_constraint="$1"
+
+source "${2:?"A version examiner is required"}"
+
+##
+# Determines if the current constraint is satisfied by the given candidate.
+#
+# This strategy will test a caret version range which specifies a minimum
+# version and will always allow non-breaking change updates.
+#
+# For pre-release versions - i.e. 0.x versions - the breaking change indicator
+# is the minor version; for post-release versions - i.e. 1.x versions - the
+# breaking change indicator is the major version.
+#
+# Examples:
+# - "^1.2.3" = ">=1.2.3 <2.0.0" (only minor and patch version updates)
+# - "^0.3" = ">=0.3.0 <0.4.0" (only patch version updates)
+##
+constraint_strategy::is_satisfied_by() {
+    local candidate="${1:?"A test candidate is required"}"
+
+    local min="${__caret_strategy_constraint#\^}"
+
+    if [[ "$(version_examiner::compare $candidate $min)" == "<" ]]; then
+        # candidate is less than min
+        return 1
+    fi
+
+    local super="$(__caret_strategy::calculate_supernumerary $min)"
+
+    if [[ "$(version_examiner::compare $candidate $super)" == "<" ]]; then
+        # candidate is less than the supernumerary version value
+        return 0
+    fi
+
+    return 1
+}
+
+##
+# Calculates the supernumerary version value for the caret strategy - i.e. the
+# next version that will _not_ be supported - based on the given minimum version
+# value.
+##
+__caret_strategy::calculate_supernumerary() {
+    local versions=(${1//./ })
+
+    local major="${versions[0]}"
+    local minor="${versions[1]}"
+
+    if [[ "$major" == 0 ]]; then
+        # this is prerelease, so we'll treat the minor version as the breaking
+        # change indicator
+        (( minor++ ))
+    else
+        (( major++ )) && minor=0
+    fi
+
+    echo "$major.$minor.0"
+}

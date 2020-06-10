@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+__hyphenated_strategy_constraint="$1"
+
+if [[ "$__hyphenated_strategy_constraint" == *\** ]]; then
+    echo "The hyphenated constraint '$1' cannot contain wildcards!"
+
+    return 1
+fi
+
+source "${2:?"A version examiner is required"}"
+
+##
+# Determines if the current constraint is satisfied by the given candidate.
+#
+# This strategy will test a hyphenated constraint range, e.g.: "1.2.0 - 1.3.0".
+# A range is made up of min and max constraint bounds.
+#
+# Valid constraints examples:
+# - "1.0.0 - 2.0.0"
+# - "1.0 - 2.0.0"
+# - "1.0 - 2.0"
+##
+constraint_strategy::is_satisfied_by() {
+    local candidate="${1:?"A test candidate is required"}"
+
+    local min="${__hyphenated_strategy_constraint%-*}"
+
+    if [[ "$(version_examiner::compare $candidate $min)" == "<" ]]; then
+        # candidate is less than min
+        return 1
+    fi
+
+    local max="${__hyphenated_strategy_constraint#*-}"
+
+    if [[ "$(version_examiner::compare $candidate $max)" == ">" ]]; then
+        # candidate is greater than max
+        return 1
+    fi
+
+    return 0
+}

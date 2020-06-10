@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+__script_dir="$(dirname "${BASH_SOURCE[0]}")"
+source "$__script_dir/../../../../bootstrap"
+
+__strategy="$__src_dir/service/version/constraint/strategy/tilde-strategy"
+__version_examiner="$__src_dir/service/version/version-examiner"
+
+tilde_strategy_test::test_edge_cases() {
+    local actual
+
+    source "$__strategy" "~0.0.0" "$__version_examiner"
+
+    actual=$(constraint_strategy::is_satisfied_by "0.0.0"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "0.0.999"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "0.1.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+}
+
+tilde_strategy_test::test_patch_only_constraints() {
+    local actual
+
+    # specifying a patch version prevents major and minor version updates
+    source "$__strategy" "~1.2.3" "$__version_examiner"
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.2.3"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.2.999"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.3.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "2.0.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+}
+
+tilde_strategy_test::test_minor_only_constraints() {
+    local actual
+
+    # specifying a minor version prevents major version updates
+    source "$__strategy" "~1.2" "$__version_examiner"
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.2.3"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.2.999"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.3.0"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.5.999"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "2.0.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+
+    # specifying only a major version still prevents major version updates
+    source "$__strategy" "~1" "$__version_examiner"
+
+    actual=$(constraint_strategy::is_satisfied_by "0.5.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.0.0"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.2.3"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.2.999"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.3.0"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "1.5.999"; echo $?)
+    bash_test::assert_equals 0 $actual
+
+    actual=$(constraint_strategy::is_satisfied_by "2.0.0"; echo $?)
+    bash_test::assert_equals 1 $actual
+}

@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+__logical_strategy_constraint="$1"
+
+source "${2:?"A version examiner is required"}"
+
+##
+# Determines if the current constraint is satisfied by the given candidate.
+#
+# This strategy will test for logical equivalence, meaning that the constraint
+# should be an expression containing the following valid constructs:
+# - operators: >, >=, <, <=, =, !=
+# - conjunctions: AND: ',', OR: '||'
+#
+# Examples:
+# - ">=1.0"
+# - ">=1.0,<2.0"
+# - ">=1.0,<2.0||=3.0"
+# - "!=3.0"
+##
+constraint_strategy::is_satisfied_by() {
+    local candidate="${1:?"A test candidate is required"}"
+
+    local normalized="${__logical_strategy_constraint//||/|}"
+    local char; for char in $(echo "(${normalized})" | grep -o .); do
+        case "$char" in
+            \(|\,|\||\)) # start, conjunction, or end
+                if [[ "$char" != "(" ]]; then
+                    if [[ "$char" != ")" ]]; then
+                        conjunction="$char"
+                    fi
+
+                    local result=$(version_examiner::compare $candidate $value)
+
+                    if [[ "$operator" == "!=" ]]; then
+                        # <> better represents the actual negative logic
+                        operator="<>"
+                    fi
+
+                    if [[ "$operator" == *"$result"* ]]; then
+                        if [[ "$conjunction" != "," ]]; then
+                            # a passing OR conjunction is good enough
+                            return 0
+                        fi
+
+                        # a passing AND conjunction needs more data...
+                    elif [[ "$conjunction" != "|" ]]; then
+                        # a failing AND conjunction is not good enough
+                        return 1
+                    fi
+                fi
+
+                local conjunction="" operator="" value=""
+            ;;
+            \<|\>|\=|\!)
+                operator+="$char" ;;
+            *)
+                value+="$char" ;;
+        esac
+    done
+}

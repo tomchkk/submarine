@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+__equivalence_strategy_constraint="$1"
+
+##
+# Determines if the current constraint is satisfied by the given candidate.
+#
+# This strategy will test for simple equivalence, therefore the constraint can
+# contain any character usually used in such a test - e.g. '*'
+#
+# Valid constraints may include: *|1.0.*|*.5|1.0.0
+##
+constraint_strategy::is_satisfied_by() {
+    local candidate="${1:?"A test candidate is required"}"
+
+    if [[ "$candidate" == $__equivalence_strategy_constraint ]]; then
+        return 0
+    fi
+
+    return 1
+}
