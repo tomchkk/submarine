@@ -18,7 +18,7 @@ Options:
     -b, --branch    The required branch (default: master)
     -d, --dev       Add a requirement as development only
     -f, --force     Allows adding an otherwise ignored submodule path
-    -v, --version   Optionally include a submodule version constraint (TODO).
+    -v, --version   Optionally include a submodule version constraint.
     -h, --help      Print usage information
 
 EOF
