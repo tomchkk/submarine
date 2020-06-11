@@ -75,17 +75,13 @@ submodule_service::add() {
             submodule_service::add false false false "${dependency_args[@]}"
         else
             echo "'$dependency_path' is already required"
+
+            __submodule_service::post_add "$dependency_path"
         fi
 
         # update dependency config
         config_service::set_super_dependency "$super" "$dependency_path"
         config_service::set_dependency_super "$dependency" "$super_path"
-
-        # TODO: might be better to add this:
-        # __submodule_service::post_add "$dependency_path"
-        # as post_add() could also be relevant to dependencies (have to check)
-
-        __submodule_service::checkout "$dependency_path"
     done
 
     __submodule_service::post_add "$super_path"
