@@ -1,4 +1,6 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -f
+# -f is used to disable variable expansion, allowing use of '*' as a version
+# constraint
 
 __app_dir=$(dirname $(perl -e "use Cwd 'abs_path'; print abs_path(@ARGV[0])" -- "$0"))
 

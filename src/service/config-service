@@ -36,6 +36,18 @@ __config_service::remove_key_with_value() {
 }
 
 ##
+# Removes all config items with a given key.
+##
+__config_service::remove_key() {
+    local section="${1:?"A config section is required"}"
+    local key="${2?:"A config key is required"}"
+
+    local full_key="submodule.$section.$key"
+
+    git config --file .gitmodules --unset-all "$full_key"
+}
+
+##
 # Adds a config key to a submodule to indicate a submodule is a 'super' module
 # - i.e.: a top-level required module.
 ##
@@ -56,6 +68,18 @@ config_service::set_as_dev() {
 
     local args=("$name" "$__config_service_dev_key" true)
     __config_service::add_key ${args[@]}
+}
+
+##
+# Sets a version constraint on a required submodule.
+##
+config_service::set_version() {
+    local name="${1:?"A submodule name is required"}"
+    local version="${2:?"A version constraint is required"}"
+
+    # replace any existing version key with the given one
+    __config_service::remove_key "$name" "version"
+    __config_service::add_key "$name" "version" "$version"
 }
 
 ##
@@ -172,12 +196,12 @@ config_service::is_dev_dependency() {
 # to allow querying of config of installed submodules.
 ##
 config_service::get_name_for_path() {
-    local path=${1:?"A path is required"}
-    local base=${2:-"./"}
+    local path="${1:?"A path is required"}"
+    local base="${2:-"./"}"
 
-    local config=$(git config --file $base/.gitmodules --get-regexp .path)
+    local config="$(git config --file $base/.gitmodules --get-regexp .path)"
 
-    echo "${config[@]}" | grep $path | cut -d ' ' -f 1 | cut -d '.' -f 2
+    echo "${config[@]}" | grep "$path" | cut -d ' ' -f 1 | cut -d '.' -f 2
 }
 
 ##
@@ -185,39 +209,50 @@ config_service::get_name_for_path() {
 # to allow querying of config of installed submodules.
 ##
 config_service::get_repo_for_path() {
-    local path=${1:?"A path is required"}
-    local base=${2:-"./"}
+    local path="${1:?"A path is required"}"
+    local base="${2:-"./"}"
 
-    __config_service::get_config_item_for_path "url" $path $base
+    __config_service::get_config_item_for_path "url" "$path" "$base"
 }
 
 ##
-# Gets a branch for a given submodule path, with an optional submodule base path,
-# to allow querying of config of installed submodules.
+# Gets a branch for a given submodule path, with an optional submodule base
+# path, to allow querying of config of installed submodules.
 ##
 config_service::get_branch_for_path() {
-    local path=${1:?"A path is required"}
-    local base=${2:-"./"}
+    local path="${1:?"A path is required"}"
+    local base="${2:-"./"}"
 
-    __config_service::get_config_item_for_path "branch" $path $base
+    __config_service::get_config_item_for_path "branch" "$path" "$base"
+}
+
+##
+# Gets a version constraint for a given submodule path, with an optional
+# submodule base path, to allow querying of config of installed submodules.
+##
+config_service::get_version_for_path() {
+    local path="${1:?"A path is required"}"
+    local base="${2:-"./"}"
+
+    __config_service::get_config_item_for_path "version" "$path" "$base"
 }
 
 ##
 # Gets bin references for a given submodule path.
 ##
 config_service::get_bins_for_path() {
-    local path=${1:?"A path is required"}
+    local path="${1:?"A path is required"}"
 
-    echo $(git config --file $path/.gitmodules --get-all self.bin)
+    echo $(git config --file "$path"/.gitmodules --get-all self.bin)
 }
 
 ##
 # Gets install commands for a given submodule path.
 ##
 config_service::get_install_for_path() {
-    local path=${1:?"A path is required"}
+    local path="${1:?"A path is required"}"
 
-    echo $(git config --file $path/.gitmodules --get-all self.install)
+    echo $(git config --file "$path"/.gitmodules --get-all self.install)
 }
 
 ##
@@ -226,7 +261,7 @@ config_service::get_install_for_path() {
 config_service::find_path_for_value() {
     local value="${1:?"A search value is required"}"
 
-    local name=$(git config --file .gitmodules --get submodule.$value.path)
+    local name="$(git config --file .gitmodules --get submodule.$value.path)"
     if [[ -n "$name" ]]; then
         echo "$name"
 
@@ -237,7 +272,7 @@ config_service::find_path_for_value() {
     value="$(__config_service::normalize_path "$value")"
 
     for path in $(config_service::get_configured_paths); do
-        if [[ $path =~ ^$value$ ]]; then
+        if [[ "$path" =~ ^"$value"$ ]]; then
             echo "$path"
 
             return 0
@@ -251,7 +286,7 @@ config_service::find_path_for_value() {
 # Normalizes an actual filesystem path to a submodule 'path'
 ##
 __config_service::normalize_path() {
-    local path=${1:?"A path value is required"}
+    local path="${1:?"A path value is required"}"
 
     echo "$path" | sed -E 's,\.\/(.*),\1,;s,(.*)\/$,\1,'
 }
@@ -260,13 +295,13 @@ __config_service::normalize_path() {
 # Gets a specified submodule config item for a given path.
 ##
 __config_service::get_config_item_for_path() {
-    local item=${1:?"An item is required"}
-    local path=${2:?"A path is required"}
-    local base=${3:-"./"}
+    local item="${1:?"An item is required"}"
+    local path="${2:?"A path is required"}"
+    local base="${3:-"./"}"
 
     local section="$(config_service::get_name_for_path "$path" "$base")"
 
-    echo $(git config --file $base/.gitmodules --get submodule.$section.$item)
+    echo "$(git config --file $base/.gitmodules --get submodule.$section.$item)"
 }
 
 ##
@@ -279,7 +314,9 @@ __config_service::get_all_config_item_for_path() {
 
     local section="$(config_service::get_name_for_path "$path" "$base")"
 
-    echo $(git config --file $base/.gitmodules --get-all submodule.$section.$item)
+    echo $(
+        git config --file $base/.gitmodules --get-all submodule.$section.$item
+    )
 }
 
 ##

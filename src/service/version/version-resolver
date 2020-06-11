@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+source "$SERVICE/config-service"
+source "$SERVICE/dependency-service"
+
+__version_resolver_constraint_service="$SERVICE/version/constraint/constraint-service"
+
+##
+# Finds the highest version common to all version constraints of a given
+# submodule path from a package's available version tags.
+##
+version_resolver::resolve_submodule() {
+    local submodule="${1:?"A submodule path is required"}"
+
+    local constraints=("$(__version_resolver::get_constraints "$submodule")")
+    local tags="$(__version_resolver::get_r_sorted_tags "$submodule")"
+
+    local tag; for tag in ${tags[@]}; do
+        if [[ -z "${constraints[@]}" ]]; then
+            break # there are no constraints!
+        fi
+
+        local constraint; for constraint in ${constraints[@]}; do
+            source "$__version_resolver_constraint_service" "$constraint"
+
+            if ! $(constraint_service::is_satisfied_by "${tag/v}"); then
+                # the tag must fit _all_ constraints
+                continue 2 # check the next tag
+            fi
+        done
+
+        echo "$tag" # this is our version
+
+        return 0
+    done
+
+    return 1
+}
+
+##
+# Gets an array of version constraints for a given submodule path, for all
+# repos indicating the submodule as a dependency.
+##
+__version_resolver::get_constraints() {
+    local submodule="${1:?"A submodule path is required"}"
+
+    local dependency constraints=()
+    for dependency in $(dependency_service::get_dependencies); do
+        if [[ "$dependency" =~ ^(.*)/?("$submodule")$ ]]; then
+            local base="${BASH_REMATCH[1]}"
+            local path="${BASH_REMATCH[2]}"
+
+            constraints+=(
+                "$(config_service::get_version_for_path "$path" "$base")"
+            )
+        fi
+    done
+
+    # N.B. don't be tempted to enquote this array without testing - it probably
+    # breaks adding an asterisk as a version constraint
+    echo ${constraints[@]}
+}
+
+##
+# Gets a list of reverse-sorted tags for the given submodule path.
+##
+__version_resolver::get_r_sorted_tags() {
+    local submodule="${1:?"A submodule path is required"}"
+
+    local tags=("$(
+        cd "$GIT_PATH/$submodule"
+        git tag --list --sort=-version:refname --ignore-case
+    )")
+
+    echo "${tags[@]}"
+}

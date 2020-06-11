@@ -2,6 +2,8 @@
 
 source "$SERVICE/config-service"
 source "$SERVICE/gitignore-service"
+source "$SERVICE/dependency-service"
+source "$SERVICE/version/version-resolver"
 
 __submodule_service_git_path="$GIT_PATH"
 __submodule_service_submodules_dir="$SUBMODULES_DIR"
@@ -20,6 +22,7 @@ submodule_service::add() {
     local was_added=$(git submodule add ${arguments[@]}; echo $?)
     local super=$(config_service::get_name_for_path "$super_path")
 
+    # TODO: try to tidy this up:
     if "$is_super" && [[ -n "$super" ]]; then
         # any super repo should be marked as being 'super', as long as it was
         # succesfully added or is already required
@@ -30,6 +33,11 @@ submodule_service::add() {
             config_service::set_as_dev "$super"
         fi
 
+        if [[ "$version" != false ]]; then
+            # set version constraint
+            config_service::set_version "$super" "$version"
+        fi
+
         git add .gitmodules
     fi
 
@@ -37,11 +45,8 @@ submodule_service::add() {
         return 1
     fi
 
-    local dependencies=(
-        $(__submodule_service::get_dependencies_for_path "$super_path")
-    )
-    local dependency_path
-    for dependency_path in ${dependencies[@]}; do
+    local dependencies=($(dependency_service::get_dependencies "$super_path"))
+    local dependency_path; for dependency_path in ${dependencies[@]}; do
         dependency_path=${dependency_path/$super_path\/}
 
         if $(config_service::is_dev_dependency "$dependency_path" "$super_path"); then
@@ -75,6 +80,12 @@ submodule_service::add() {
         # update dependency config
         config_service::set_super_dependency "$super" "$dependency_path"
         config_service::set_dependency_super "$dependency" "$super_path"
+
+        # TODO: might be better to add this:
+        # __submodule_service::post_add "$dependency_path"
+        # as post_add() could also be relevant to dependencies (have to check)
+
+        __submodule_service::checkout "$dependency_path"
     done
 
     __submodule_service::post_add "$super_path"
@@ -135,10 +146,8 @@ submodule_service::remove() {
         return 1
     fi
 
-    local dependencies=($(__submodule_service::get_dependencies_for_path "$path"))
-
-    local dependency_path
-    for dependency_path in ${dependencies[@]}; do
+    local dependencies=($(dependency_service::get_dependencies "$path"))
+    local dependency_path; for dependency_path in ${dependencies[@]}; do
         submodule_service::remove "${dependency_path/$path\/}" "$path"
     done
 
@@ -157,32 +166,12 @@ submodule_service::remove_indiscriminately() {
 }
 
 ##
-# Gets an array of dependency paths for a given submodule path.
-##
-__submodule_service::get_dependencies_for_path() {
-    local path="${1:?"A path is required"}"
-    local states=($(git submodule status --recursive $path))
-    local dependencies=()
-
-    for state in "${states[@]}"; do
-        case "$state" in
-            **/**)
-                if [[ "$state" != "$path" ]]; then
-                    dependencies+=("$state")
-                fi
-            ;;
-        esac
-    done
-
-    echo ${dependencies[@]}
-}
-
-##
 # Performs post-add submodule tasks.
 ##
 __submodule_service::post_add() {
     local submodule="${1:?"A submodule path is required"}"
 
+    __submodule_service::checkout "$submodule"
     __submodule_service::make_bin_links "$submodule"
     __submodule_service::run_install_commands "$submodule"
 
@@ -195,6 +184,7 @@ __submodule_service::post_add() {
 __submodule_service::post_update() {
     local submodule="${1:?"A submodule path is required"}"
 
+    __submodule_service::checkout "$submodule"
     __submodule_service::unset_bin_links "$submodule"
     __submodule_service::make_bin_links "$submodule"
     __submodule_service::run_install_commands "$submodule"
@@ -241,7 +231,28 @@ __submodule_service::run_install_commands() {
 }
 
 ##
-# Performs pre submodule removal tasks.
+# Performs a checkout of the submodule repo at the highest version common to
+# the version constraints of all owning submodules, or the fallback branch
+# config value if a common version cannot be found.
+##
+__submodule_service::checkout() {
+    local submodule="${1:?"A submodule path is required"}"
+
+    local version="$(version_resolver::resolve_submodule "$submodule")"
+
+    if [[ -n "$version" ]]; then
+        echo " - checking out common version '$version' of '$submodule'"
+
+        (cd "$GIT_PATH/$submodule" && git checkout --quiet "$version")
+    else
+        echo " - a version compatible with all dependencies common to submodule '$submodule' could not be found!"
+
+        return 1
+    fi
+}
+
+##
+# Performs pre-submodule removal tasks.
 ##
 __submodule_service::pre_remove() {
     local path="${1:?"A submodule path is required"}"

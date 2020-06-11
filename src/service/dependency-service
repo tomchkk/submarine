@@ -1,13 +1,34 @@
 #!/usr/bin/env bash
 
-source "$SERVICE/submodule-service"
+##
+# Gets an array of dependency paths, optionally for a given submodule path.
+##
+dependency_service::get_dependencies() {
+    local path="${1:-"."}"
 
-__dependency_service_submodules_dir="$SUBMODULES_DIR"
+    local states=($(git submodule status --recursive "$path"))
+    local paths=()
+
+    for column in "${states[@]}"; do
+        case "$column" in
+            **/**)
+                if [[ "$column" == "$path" ]]; then
+                    # exclude a given path; it can't be a dependency of itself
+                    continue
+                fi
+
+                paths+=("$column")
+            ;;
+        esac
+    done
+
+    echo ${paths[@]}
+}
 
 ##
 # Iterates dependencies for a given submodule path.
 ##
-dependency_service::iterate_dependencies_for_path() {
+__dependency_service::iterate_dependencies_for_path() {
     local super_path="$1"
     local states=($(git submodule status --recursive $super_path))
     local dependencies=()
@@ -21,7 +42,7 @@ dependency_service::iterate_dependencies_for_path() {
             **/**) dependency_path=$item ;;
             (*\)) : ;; # version noop
             *)
-                if [[ -n $dependency_sha ]]
+                if [[ -n $dependency_sha ]] \
                 && [[ "$dependency_path" != "$super_path" ]]; then
                     # exclude the parent path from the array
 
@@ -51,7 +72,6 @@ dependency_service::iterate_dependencies_for_path() {
         __dependency_service::print_dependency $dependency
     done
 }
-
 
 ##
 # Prints the status of a given submodule dependency.

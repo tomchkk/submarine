@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+__constraint_service_strategies="$SERVICE/version/constraint/strategy"
+__constraint_service_examiner="$SERVICE/version/version-examiner"
+
+##
+# Sets the bounds of the given constraint.
+##
+__constraint_service::set_strategy() {
+    local constraint="$@"
+    local strategy
+
+    case "$constraint" in
+        \^*)
+            strategy="caret" ;;
+        *\-*)
+            strategy="hyphenated" ;;
+        \~*)
+            strategy="tilde" ;;
+        \<*|\>*|\=*|\!\=*|*\|\|*)
+            strategy="logical" ;;
+        *)
+            strategy="equivalence" ;;
+    esac
+
+    local args=(
+        "$constraint"
+        "$__constraint_service_examiner"
+    )
+
+    source "$__constraint_service_strategies/$strategy-strategy" "${args[@]}"
+}
+
+__constraint_service::set_strategy $@
+
+##
+# Checks whether the given candidate satisifies the version constraint.
+##
+constraint_service::is_satisfied_by() {
+    local candidate="${1:?"A conformity candidate is required"}"
+
+    return $(constraint_strategy::is_satisfied_by "$candidate")
+}

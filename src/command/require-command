@@ -36,7 +36,7 @@ __require_command::handle() {
     local version=false
 
     while [[ "$#" -gt 0 ]]; do
-        case $1 in
+        case "$1" in
             -b|--branch)
                 branch="$2" && shift ;;
             -d|--dev)
@@ -44,7 +44,14 @@ __require_command::handle() {
             -f|--force)
                 force=true ;;
             -v|--version)
-                version="$2" && shift ;;
+                if [[ "$3" == "-" ]] && [[ -n "$4" ]]; then
+                    version="$2-$4" && shift 3
+                else
+                    version="$2" && shift
+                fi
+
+                # TODO: add version validation (if not here, then elsewhere)
+            ;;
             -h|-*|--help|--*)
                 __require_command::usage && return 0 ;;
             *)
