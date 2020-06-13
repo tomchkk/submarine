@@ -22,7 +22,6 @@ submodule_service::add() {
     local was_added=$(git submodule add ${arguments[@]}; echo $?)
     local super=$(config_service::get_name_for_path "$super_path")
 
-    # TODO: try to tidy this up:
     if "$is_super" && [[ -n "$super" ]]; then
         # any super repo should be marked as being 'super', as long as it was
         # succesfully added or is already required
@@ -74,9 +73,11 @@ submodule_service::add() {
 
             submodule_service::add false false false "${dependency_args[@]}"
         else
-            echo "'$dependency_path' is already required"
+            echo "Dependency '$path' is already required"
 
-            __submodule_service::post_add "$dependency_path"
+        # ensure that the version common to all requiring supers is checked
+        # out and any related activities are performed
+        __submodule_service::post_add "$path"
         fi
 
         # update dependency config
