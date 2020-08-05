@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+##
+# Starts the main process
+##
+submarine_bin::main() {
+    local __script=$(readlink ${BASH_SOURCE[0]} || echo ${BASH_SOURCE[0]})
+    local __app_dir=$(
+        # cd first to the source dir, in case $script is relative
+        cd $(dirname ${BASH_SOURCE[0]})
+        cd $(dirname "$__script")
+        cd ..
+        pwd
+    )
+
+    source "$__app_dir/submarine" $@
+}
+
+submarine_bin::main $@
