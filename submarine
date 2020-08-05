@@ -2,7 +2,8 @@
 # -f is used to disable variable expansion, allowing use of '*' as a version
 # constraint
 
-__app_dir=$(dirname $(perl -e "use Cwd 'abs_path'; print abs_path(@ARGV[0])" -- "$0"))
+__script=$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")
+__app_dir="$(cd $(dirname "$__script"); pwd)"
 
 APP_VERSION="$(cd $__app_dir; git describe --always --first-parent HEAD 2>/dev/null)"
 
