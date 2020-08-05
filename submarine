@@ -10,8 +10,12 @@ echo "pwd: $PWD"
 __script=$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")
 echo "__script: $__script"
 
-CDPATH="$(dirname ${BASH_SOURCE[0]}):$CDPATH"
-__app_dir="$(cd $(dirname "$__script"); pwd)"
+# CDPATH="$(dirname ${BASH_SOURCE[0]}):$CDPATH"
+__app_dir="$(
+    cd $(dirname ${BASH_SOURCE[0]})
+    cd $(dirname "$__script")
+    pwd
+)"
 echo "__app_dir: $__app_dir"
 
 __app_dir_2="$(cd $(); pwd)"
