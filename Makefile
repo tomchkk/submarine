@@ -1,7 +1,7 @@
-PREFIX?=/usr/local
+PREFIX?=${PWD}
 VERSION?=$(shell git describe --always --first-parent HEAD)
 
-all: version
+all: env version
 
 version: clean
 	@echo $(VERSION) > ./version
@@ -10,10 +10,10 @@ clean:
 	@rm -f ./version
 
 install: env version
-	@ln -fs ${PWD}/bin/submarine $(PREFIX)/bin/submarine
+	@ln -fs $(PREFIX)/bin/submarine /usr/local/bin/submarine
 
 env:
-	@cp -n ${PWD}/.env.example ${PWD}/.env || :
+	@cp -n $(PREFIX)/.env.example $(PREFIX)/.env || :
 
 uninstall:
 	@unlink /usr/local/bin/submarine
