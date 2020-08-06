@@ -206,10 +206,11 @@ __submodule_service::make_bin_links() {
     fi
 
     for bin in "${bins[@]}"; do
-        local bin="$__submodule_service_git_path/$submodule/$bin"
+        local bin_abs="$__submodule_service_git_path/$submodule/$bin"
+        local bin_rel="./../../$submodule/$bin"
 
-        if [[ -e "$bin" ]]; then
-            ln -fs "$bin" "$bin_dir/$(basename "$bin")"
+        if [[ -e "$bin_abs" ]]; then
+            ln -fs "$bin_rel" "$bin_dir/$(basename "$bin")"
         fi
     done
 }
