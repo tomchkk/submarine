@@ -2,7 +2,7 @@
 # -f is used to disable variable expansion, allowing use of '*' as a version
 # constraint
 
-APP_VERSION="$(cd $__app_dir; git describe --always --first-parent HEAD 2>/dev/null)"
+APP_VERSION="$(cat $__app_dir/version)"
 
 source "$__app_dir/.env"
 
