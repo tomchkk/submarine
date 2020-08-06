@@ -1,9 +1,10 @@
 PREFIX?=/usr/local
+VERSION?=$(shell git describe --always --first-parent HEAD)
 
 all: version
 
 version: clean
-	@git describe --always --first-parent HEAD > ./version
+	@echo $(VERSION) > ./version
 
 clean:
 	@rm -f ./version
