@@ -73,11 +73,11 @@ submodule_service::add() {
 
             submodule_service::add false false false "${dependency_args[@]}"
         else
-            echo "Dependency '$path' is already required"
+            echo "Dependency '$dependency_path' is already required"
 
-        # ensure that the version common to all requiring supers is checked
-        # out and any related activities are performed
-        __submodule_service::post_add "$path"
+            # ensure that the version common to all requiring supers is checked
+            # out and any related activities are performed
+            __submodule_service::post_add "$dependency_path"
         fi
 
         # update dependency config
