@@ -11,6 +11,7 @@ dependency_service::get_dependencies() {
 
     for column in "${states[@]}"; do
         case "$column" in
+            (*\)) : ;; # version noop
             **/**)
                 if [[ "$column" == "$path" ]]; then
                     # exclude a given path; it can't be a dependency of itself
@@ -39,8 +40,8 @@ __dependency_service::iterate_dependencies_for_path() {
         local dependency_sha dependency_path
 
         case "$item" in
-            **/**) dependency_path=$item ;;
             (*\)) : ;; # version noop
+            **/**) dependency_path=$item ;;
             *)
                 if [[ -n $dependency_sha ]] \
                 && [[ "$dependency_path" != "$super_path" ]]; then
