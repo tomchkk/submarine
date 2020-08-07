@@ -70,6 +70,10 @@ __require_command::handle() {
     )}"
     positionals[1]="$SUBMODULES_DIR/$name"
 
+    if [[ -z "$name" ]]; then
+        return 1
+    fi
+
     local options=("$dev" "$version")
     local arguments=(
         --branch "$branch"

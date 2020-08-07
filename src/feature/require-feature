@@ -23,7 +23,22 @@ require_feature::require() {
 # - git@gitlab.com:vendor/project.git -> vendor/project
 ##
 require_feature::parse_name_from_repo() {
-    local name=${1:?"A repo value is required"}
+    local repo=${1:?"A repo value is required"}
+    local name=${repo/.git/}
 
-    echo ${name/.git/} | cut -d ':' -f 2
+    case "$name" in
+        git@*) # ssh
+            echo "$name" | cut -d ':' -f 2
+        ;;
+        https*) # https
+            echo "${name#*://*/}"
+        ;;
+        *)
+            echo "Protocol for '$name' is not supported" >&2
+
+            return 1
+        ;;
+    esac
+
+    return 0
 }
