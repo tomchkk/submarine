@@ -5,6 +5,7 @@ source "$SERVICE/gitignore-service"
 __autoload_service_submodules_path="$GIT_PATH/$SUBMODULES_DIR"
 __autoload_service_resource_file="$AUTOLOAD_RESOURCE"
 __autoload_service_project_file="$SUBMODULES_DIR/$(basename "$AUTOLOAD_RESOURCE")"
+__autoload_service_cache_file="${__autoload_service_project_file}.cache"
 
 ##
 # Refresh the submarine autoload file.
@@ -21,6 +22,7 @@ autoload_service::refresh() {
     fi
 
     cp -f "$resource_file" "$submodules_path/"
+    rm -f "$__autoload_service_cache_file"
 
     # add autoload path to project's .gitignore
     gitignore_service::add "$project_file"
