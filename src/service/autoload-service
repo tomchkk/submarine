@@ -14,6 +14,7 @@ autoload_service::refresh() {
     local submodules_path="$__autoload_service_submodules_path"
     local resource_file="$__autoload_service_resource_file"
     local project_file="$__autoload_service_project_file"
+    local cache_file="$__autoload_service_cache_file"
 
     if [[ ! -d "$submodules_path" ]]; then
         echo "The directory for submodules does not exist!"
@@ -22,10 +23,14 @@ autoload_service::refresh() {
     fi
 
     cp -f "$resource_file" "$submodules_path/"
-    rm -f "$__autoload_service_cache_file"
+
+    if [[ -f "$cache_file" ]]; then
+        rm -f "$cache_file"
+    fi
 
     # add autoload path to project's .gitignore
     gitignore_service::add "$project_file"
+    gitignore_service::add "$cache_file"
 }
 
 ##
@@ -33,11 +38,17 @@ autoload_service::refresh() {
 ##
 autoload_service::remove() {
     local project_file="$__autoload_service_project_file"
+    local cache_file="$__autoload_service_cache_file"
 
     if [[ -f "$project_file" ]]; then
         rm -f "$project_file"
     fi
 
+    if [[ -f "$cache_file" ]]; then
+        rm -f "$cache_file"
+    fi
+
     # removes autoload file from project's .gitignore
     gitignore_service::remove "$project_file"
+    gitignore_service::remove "$cache_file"
 }
