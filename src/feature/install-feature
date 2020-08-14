@@ -5,12 +5,17 @@ source "$SERVICE/config-service"
 source "$SERVICE/submodule-service"
 
 ##
-# Installs all configured submodules.
+# Installs all configured submodules, optionally excluding dev dependencies.
 ##
 install_feature::install_all() {
+    local dev="${1:-true}"
     local paths=$(config_service::get_configured_paths)
 
     for path in ${paths[@]}; do
+        if ! "$dev" && $(config_service::is_dev_dependency "$path"); then
+            continue # we'll skip this dev dependency
+        fi
+
         __install_feature::install $path
     done
 }

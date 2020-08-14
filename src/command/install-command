@@ -15,6 +15,7 @@ Usage:  $APP_NAME install [<options>] | [<name|path>...]
 
 Options:
     -a, --all       Install all submodules
+    -n, --no-dev    Skip installation of dev dependencies with the --all option
     -h, --help      Print usage information
 
 EOF
@@ -24,13 +25,16 @@ EOF
 # Handles incoming command requests.
 ##
 __install_command::handle() {
+    local all=false
+    local dev=true
     local submodules=()
 
     while [[ "$#" -gt 0 ]]; do
         case $1 in
+            -n|--no-dev)
+                dev=false ;;
             -a|--all)
-                install_feature::install_all && return 0
-            ;;
+                all=true ;;
             -h|-*|--help|--*)
                 __install_command::usage && return 0
             ;;
@@ -42,7 +46,11 @@ __install_command::handle() {
         shift
     done
 
-    install_feature::install_named ${submodules[@]}
+    if "$all"; then
+        install_feature::install_all $dev
+    else
+        install_feature::install_named ${submodules[@]}
+    fi
 }
 
 # handle empty args
