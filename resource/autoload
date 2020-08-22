@@ -7,7 +7,7 @@ __submarine_autoload::handle() {
     local name=$(echo $1 | sed -E 's/(\/|-)/_/g')
     local path="$2/$3"
 
-    local submodule=("$name=$path")
+    local submodule=("$name=\"$path\"")
 
     echo ${submodule[@]}
 }
