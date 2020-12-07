@@ -224,7 +224,12 @@ __submodule_service::run_install_commands() {
     local cmds=($(config_service::get_install_for_path "$submodule"))
 
     for cmd in "${cmds[@]}"; do
-        (cd "$GIT_PATH/$submodule" && export "PROJECT_DIR=$GIT_PATH" && "$cmd" )
+        (
+            cd "$GIT_PATH/$submodule" \
+                && export "PROJECT_DIR=$GIT_PATH" \
+                && export "SUBMODULE_PATH=$submodule" \
+                && "$cmd"
+        )
     done
 }
 
