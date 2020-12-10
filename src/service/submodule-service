@@ -168,7 +168,7 @@ submodule_service::remove_indiscriminately() {
 __submodule_service::post_add() {
     local submodule="${1:?"A submodule path is required"}"
 
-    __submodule_service::checkout "$submodule"
+    __submodule_service::symlink_or_checkout "$submodule"
     __submodule_service::make_bin_links "$submodule"
     __submodule_service::run_install_commands "$submodule"
 
@@ -181,7 +181,7 @@ __submodule_service::post_add() {
 __submodule_service::post_update() {
     local submodule="${1:?"A submodule path is required"}"
 
-    __submodule_service::checkout "$submodule"
+    __submodule_service::symlink_or_checkout "$submodule"
     __submodule_service::unset_bin_links "$submodule"
     __submodule_service::make_bin_links "$submodule"
     __submodule_service::run_install_commands "$submodule"
@@ -234,6 +234,52 @@ __submodule_service::run_install_commands() {
                 && "$cmd"
         )
     done
+}
+
+##
+# Allows the user to choose between checking-out a branch or creating a symlink
+# when the repo is actually a local file.
+##
+__submodule_service::symlink_or_checkout() {
+    local submodule="${1:?"A submodule path is required"}"
+
+    if [[ -e "$(config_service::get_repo_for_path $submodule)" ]]; then
+        # the repo exists as a path on this filesystem, so rather than checking
+        # out a specific branch, we can just symlink to the local files.
+        read -p "Install local submodule as a symlink? (y|n) " -r && echo
+
+        if [[ $REPLY =~ ^[Yy](es)?$ ]]; then
+            __submodule_service::symlink_local "$submodule"
+
+            return $?
+        fi
+    fi
+
+    __submodule_service::checkout "$submodule"
+}
+
+##
+# Creates a symlink to the repo, when it is a local one.
+##
+__submodule_service::symlink_local() {
+    local submodule="${1:?"A submodule path is required"}"
+    local repo="$(config_service::get_repo_for_path $submodule)"
+
+    if [[ ! -e "$repo" ]]; then
+        echo "'$repo' is not a local repo! Cannot be symlinked." >&2
+
+        return 1
+    fi
+
+    (
+        # let's be sure we're in the right place
+        cd "$GIT_PATH"
+        # for some reason if the submodule directory is not first removed before
+        # creating the symlinked version, the symlink itself is made inside the
+        # existing submodule directory
+        rm -rf "$submodule"
+        ln -s "$(config_service::get_repo_for_path $submodule)" "$submodule"
+    )
 }
 
 ##
