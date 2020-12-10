@@ -34,9 +34,9 @@ require_feature::parse_name_from_repo() {
             echo "${name#*://*/}"
         ;;
         *)
-            echo "Protocol for '$name' is not supported" >&2
-
-            return 1
+            # neither a name nor a protocol was provided, so we'll take a stab
+            # at guessing the submodule name:
+            echo "$(basename $(dirname $name))/$(basename $name)"
         ;;
     esac
 
