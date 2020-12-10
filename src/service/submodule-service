@@ -221,6 +221,9 @@ __submodule_service::make_bin_links() {
 __submodule_service::run_install_commands() {
     local submodule="${1:?"A submodule path is required"}"
 
+    # BUG:
+    #  - Fetched commands are space-separated so currently only single word
+    # install commands works
     local cmds=($(config_service::get_install_for_path "$submodule"))
 
     for cmd in "${cmds[@]}"; do
