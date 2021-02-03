@@ -6,11 +6,11 @@ __config_service_super_module_indicator="self"
 __config_service_dependency_key="dependency"
 
 ##
-# Adds a config key value to git submodule config, if it doesn't already exist.
+# Adds a config value to git submodule config, if it doesn't already exist.
 ##
 __config_service::add_key() {
     local section="${1:?"A config section is required"}"
-    local key="${2?:"A config key is required"}"
+    local key="${2:?"A config key is required"}"
     local value="${3:?"A config value is required"}"
 
     local full_key="submodule.$section.$key"
