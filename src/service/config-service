@@ -48,6 +48,18 @@ __config_service::remove_key() {
 }
 
 ##
+# Sets the current submodule commit hash in the config.
+##
+config_service::set_commit() {
+    local name="${1:?"A submodule name is required"}"
+    local commit="${2:?"A commit hash is required"}"
+
+    # replace any existing commit value with the given one
+    __config_service::remove_key "$name" "commit"
+    __config_service::add_key "$name" "commit" "$commit"
+}
+
+##
 # Adds a config key to a submodule to indicate a submodule is a 'super' module
 # - i.e.: a top-level required module.
 ##

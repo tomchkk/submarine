@@ -169,6 +169,7 @@ __submodule_service::post_add() {
     local submodule="${1:?"A submodule path is required"}"
 
     __submodule_service::symlink_or_checkout "$submodule"
+    __submodule_service::add_config "$submodule"
     __submodule_service::make_bin_links "$submodule"
     __submodule_service::run_install_commands "$submodule"
 
@@ -182,9 +183,24 @@ __submodule_service::post_update() {
     local submodule="${1:?"A submodule path is required"}"
 
     __submodule_service::symlink_or_checkout "$submodule"
+    __submodule_service::add_config "$submodule"
     __submodule_service::unset_bin_links "$submodule"
     __submodule_service::make_bin_links "$submodule"
     __submodule_service::run_install_commands "$submodule"
+}
+
+##
+# Adds config items for a submodule.
+##
+__submodule_service::add_config() {
+    local submodule="${1:?"A submodule path is required"}"
+
+    local name="$(config_service::get_name_for_path $submodule)"
+    local status="$(git submodule status "$submodule" | xargs)"
+
+    config_service::set_commit \
+        "$name" \
+        "${status/% $__submodule_service_submodules_dir*}"
 }
 
 ##
