@@ -111,7 +111,7 @@ submodule_service::get_installed_paths() {
 submodule_service::update_path() {
     local path=${1:?"A submodule path is required"}
 
-    git submodule update --force --checkout --remote "$path"
+    git submodule update --remote --force --checkout -- "$path"
 
     __submodule_service::post_update "$path"
 }
@@ -196,11 +196,9 @@ __submodule_service::add_config() {
     local submodule="${1:?"A submodule path is required"}"
 
     local name="$(config_service::get_name_for_path $submodule)"
-    local status="$(git submodule status "$submodule" | xargs)"
+    local hash="$(cd $submodule && git rev-parse HEAD)"
 
-    config_service::set_commit \
-        "$name" \
-        "${status/% $__submodule_service_submodules_dir*}"
+    config_service::set_commit "$name" "$hash"
 }
 
 ##
@@ -306,18 +304,17 @@ __submodule_service::symlink_local() {
 __submodule_service::checkout() {
     local submodule="${1:?"A submodule path is required"}"
 
-    local branch="$(version_resolver::resolve_submodule "$submodule")"
+    local version="$(version_resolver::resolve_submodule "$submodule")"
 
-    if [[ -n "$branch" ]]; then
-        echo " - checking out common version '$branch' of '$submodule'"
-    else
-        branch="$(config_service::get_branch_for_path $submodule)"
+    if [[ -n "$version" ]]; then
+        echo " - checking out common version '$version' of '$submodule'"
 
-        echo " - a version compatible with all dependencies common to submodule '$submodule' could not be found."
-        echo " - The default branch '$branch' will be checked out!"
+        (cd "$GIT_PATH/$submodule" && git checkout --quiet "$version")
+
+        return 0
     fi
 
-    (cd "$GIT_PATH/$submodule" && git checkout --quiet "$branch")
+    echo -e " - a version compatible with all dependencies common to submodule '$submodule' could not be found.\n   A specific version will not be checked out!"
 }
 
 ##
