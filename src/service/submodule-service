@@ -313,7 +313,8 @@ __submodule_service::checkout() {
     else
         branch="$(config_service::get_branch_for_path $submodule)"
 
-        echo " - a version compatible with all dependencies common to submodule '$submodule' could not be found! The default branch '$branch' will be checked out."
+        echo " - a version compatible with all dependencies common to submodule '$submodule' could not be found."
+        echo " - The default branch '$branch' will be checked out!"
     fi
 
     (cd "$GIT_PATH/$submodule" && git checkout --quiet "$branch")
