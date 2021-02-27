@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+##
+# Gets the git repo ignore file.
+##
+__gitignore_service::get_file() {
+    local default="$(git -C "$GIT_PATH" config --local core.excludesFile)"
+
+    echo "${GIT_PATH}/${default:-"./.gitignore"}"
+}
+
 __gitignore_service_file="$(__gitignore_service::get_file)"
 
 ##
@@ -33,15 +42,6 @@ gitignore_service::remove() {
             echo "$content" > "$__gitignore_service_file"
         fi
     fi
-}
-
-##
-# Gets the git repo ignore file.
-##
-__gitignore_service::get_file() {
-    local default="$(git -C "$GIT_PATH" config --local core.excludesFile)"
-
-    echo "${GIT_PATH}/${default:-"./.gitignore"}"
 }
 
 ##
