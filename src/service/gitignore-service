@@ -52,7 +52,7 @@ __gitignore_service::block_insert() {
     local entry="${1:?"An entry to insert is required"}"
     local file="${2:?"A file to edit is required"}"
 
-    if $(grep --fixed-strings --quiet "$entry" "$file"); then
+    if $(grep --quiet "$entry" "$file"); then
         # the entry already exists
         return
     fi
@@ -60,8 +60,8 @@ __gitignore_service::block_insert() {
     local block_start="###> tomchkk\/submarine ###"
     local block_end="###< tomchkk\/submarine ###"
 
-    if $(grep --fixed-strings --quiet "$block_start" "$file") \
-    && $(grep --fixed-strings --quiet "$block_end" "$file"); then
+    if $(grep --quiet "$block_start" "$file") \
+    && $(grep --quiet "$block_end" "$file"); then
         # The blocks already exist so we're just(!) going to insert the entry
         # on the line before the closing block. I write _just_, this was
         # bloomin' hard to work out!
