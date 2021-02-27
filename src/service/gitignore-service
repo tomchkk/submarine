@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-__gitignore_service_file="$GIT_PATH/.gitignore"
+__gitignore_service_file="$(__gitignore_service::get_file)"
 
 ##
 # Adds a given target item to the project .gitignore file, if it doesn't already
@@ -36,6 +36,15 @@ gitignore_service::remove() {
 }
 
 ##
+# Gets the git repo ignore file.
+##
+__gitignore_service::get_file() {
+    local default="$(git -C "$GIT_PATH" config --local core.excludesFile)"
+
+    echo "${GIT_PATH}/${default:-"./.gitignore"}"
+}
+
+##
 # Inserts an entry into a given file between opening and closing blocks,
 # creating the blocks if necessary.
 ##
@@ -43,7 +52,7 @@ __gitignore_service::block_insert() {
     local entry="${1:?"An entry to insert is required"}"
     local file="${2:?"A file to edit is required"}"
 
-    if $(grep -q "$entry" "$file"); then
+    if $(grep --fixed-strings --quiet "$entry" "$file"); then
         # the entry already exists
         return
     fi
@@ -51,13 +60,13 @@ __gitignore_service::block_insert() {
     local block_start="###> tomchkk\/submarine ###"
     local block_end="###< tomchkk\/submarine ###"
 
-    if $(grep -q "$block_start" "$file") \
-    && $(grep -q "$block_end" "$file"); then
+    if $(grep --fixed-strings --quiet "$block_start" "$file") \
+    && $(grep --fixed-strings --quiet "$block_end" "$file"); then
         # The blocks already exist so we're just(!) going to insert the entry
         # on the line before the closing block. I write _just_, this was
         # bloomin' hard to work out!
         sed -i '' "/$block_end/ i\\
-        $entry
+$entry
         " "$file"
     else
         # the blocks don't exist yet, so we'll insert them along with the new
