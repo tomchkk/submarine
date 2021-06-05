@@ -213,7 +213,7 @@ config_service::get_name_for_path() {
 
     local config="$(git config --file $base/.gitmodules --get-regexp .path)"
 
-    echo "${config[@]}" | grep "$path" | cut -d ' ' -f 1 | cut -d '.' -f 2
+    echo "$config" | grep "$path"$ | cut -d ' ' -f 1 | cut -d '.' -f 2
 }
 
 ##
