@@ -15,7 +15,7 @@ Add required submodules to a project.
 Usage:  $APP_NAME require [<options>...] <repo> [<name>]
 
 Options:
-    -b, --branch    The required branch (default: master)
+    -b, --branch    The required branch
     -d, --dev       Add a requirement as development only
     -f, --force     Allows adding an otherwise ignored submodule path
     -v, --version   Optionally include a submodule version constraint.
@@ -29,7 +29,7 @@ EOF
 ##
 __require_command::handle() {
     local args=()
-    local branch="master"
+    local branch
     local dev=false
     local force=false
     local positionals=()
@@ -63,6 +63,14 @@ __require_command::handle() {
 
     if [[ ${#positionals[@]} -eq 0 ]]; then
         __require_command::usage && return 0
+    fi
+
+    branch="${branch:-$(
+        require_feature::get_default_branch_for_repo "${positionals[0]}"
+    )}"
+
+    if [[ -z "$branch" ]]; then
+        return 1
     fi
 
     local name="${positionals[1]:-$(

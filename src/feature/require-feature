@@ -42,3 +42,12 @@ require_feature::parse_name_from_repo() {
 
     return 0
 }
+
+##
+# Determines the default branch for a given repo.
+##
+require_feature::get_default_branch_for_repo() {
+    local repo=${1:?"A repo value is required"}
+
+    git remote show "$repo" | grep 'HEAD branch' | cut -d' ' -f5
+}
