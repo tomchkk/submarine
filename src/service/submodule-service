@@ -60,7 +60,8 @@ submodule_service::add() {
 
         echo "Adding dependency '$dependency_path' for '$super_path'"
 
-        if ! $(config_service::get_configured_paths | grep -q "$dependency_path"); then
+        if ! $(config_service::get_configured_paths | grep -q ^"$dependency_path"$);
+        then
             local dependency_args=(
                 --branch $(
                     config_service::get_branch_for_path "$dependency_path" "$super_path"
